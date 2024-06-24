@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Instant};
+use std::{marker::PhantomData, sync::Arc, time::Instant};
 
 use afs_chips::{
     execution_air::ExecutionAir,
@@ -6,13 +6,11 @@ use afs_chips::{
 };
 use afs_stark_backend::{
     keygen::types::MultiStarkPartialProvingKey,
-    prover::{
-        trace::{ProverTraceData, TraceCommitmentBuilder},
-        MultiTraceStarkProver,
-    },
+    prover::trace::{ProverTraceData, TraceCommitmentBuilder},
 };
 use afs_test_utils::{
-    config::{self, baby_bear_poseidon2::BabyBearPoseidon2Config},
+    config::baby_bear_poseidon2::{engine_from_perm, BabyBearPermutationEngine},
+    engine::{StarkEngine, StarkEngineWithHashInstrumentation},
     page_config::{PageConfig, PageMode},
 };
 use clap::Parser;
@@ -24,6 +22,8 @@ use logical_interface::{
     table::codec::fixed_bytes::FixedBytesCodec,
     utils::{fixed_bytes_to_field_vec, string_to_be_vec},
 };
+use p3_baby_bear::BabyBear;
+use p3_uni_stark::StarkGenericConfig;
 use p3_util::log2_strict_usize;
 
 use crate::commands::{read_from_path, write_bytes};
@@ -34,7 +34,11 @@ use super::create_prefix;
 /// Uses information from config.toml to generate a proof of the changes made by a .afi file to a table
 /// saves the proof in `output-folder` as */prove.bin.
 #[derive(Debug, Parser)]
-pub struct ProveCommand {
+pub struct ProveCommand<SC, E>
+where
+    SC: StarkGenericConfig,
+    E: StarkEngine<SC>,
+{
     #[arg(
         long = "afi-file",
         short = 'f',
@@ -76,15 +80,23 @@ pub struct ProveCommand {
         required = false
     )]
     pub silent: bool,
+
+    #[clap(skip)]
+    _phantom0: PhantomData<(SC, E)>,
 }
 
-impl ProveCommand {
+impl<SC, E> ProveCommand<SC, E>
+where
+    SC: StarkGenericConfig,
+    SC::Pcs: StarkGenericConfig + Sync,
+    E: StarkEngine<SC>,
+{
     /// Execute the `prove` command
-    pub fn execute(&self, config: &PageConfig) -> Result<()> {
+    pub fn execute(&self, config: &PageConfig, engine: &E) -> Result<()> {
         let start = Instant::now();
         let prefix = create_prefix(config);
         match config.page.mode {
-            PageMode::ReadWrite => self.execute_rw(config, prefix)?,
+            PageMode::ReadWrite => self.execute_rw(config, engine, prefix)?,
             PageMode::ReadOnly => panic!(),
         }
 
@@ -94,7 +106,7 @@ impl ProveCommand {
         Ok(())
     }
 
-    pub fn execute_rw(&self, config: &PageConfig, prefix: String) -> Result<()> {
+    pub fn execute_rw(&self, config: &PageConfig, eng: &E, prefix: String) -> Result<()> {
         println!("Proving ops file: {}", self.afi_file_path);
         let instructions = AfsInputInstructions::from_file(&self.afi_file_path)?;
         let mut db = MockDb::from_file(&self.db_file_path);
@@ -137,7 +149,7 @@ impl ProveCommand {
 
         let idx_decomp = 8;
 
-        let mut page_controller: PageController<BabyBearPoseidon2Config> = PageController::new(
+        let mut page_controller: PageController<SC> = PageController::new(
             page_bus_index,
             range_bus_index,
             ops_bus_index,
@@ -147,13 +159,16 @@ impl ProveCommand {
             idx_decomp,
         );
         let ops_sender = ExecutionAir::new(ops_bus_index, idx_len, data_len);
-        let engine = config::baby_bear_poseidon2::default_engine(max_log_degree);
-        let prover = MultiTraceStarkProver::new(&engine.config);
+        // let engine = config::baby_bear_poseidon2::default_engine(max_log_degree);
+
+        let pcs_log_degree = config.page.bits_per_fe;
+        let engine = engine_from_perm(perm, pcs_log_degree, config.fri_params);
+        let prover = engine.prover();
         let mut trace_builder = TraceCommitmentBuilder::new(prover.pcs());
 
         let init_prover_data_encoded =
             read_from_path(self.cache_folder.clone() + "/" + &table_id + ".cache.bin").unwrap();
-        let init_prover_data: ProverTraceData<BabyBearPoseidon2Config> =
+        let init_prover_data: ProverTraceData<SC> =
             bincode::deserialize(&init_prover_data_encoded).unwrap();
 
         let (init_page_pdata, final_page_pdata) = page_controller.load_page_and_ops(
@@ -171,10 +186,10 @@ impl ProveCommand {
 
         let encoded_pk =
             read_from_path(self.keys_folder.clone() + "/" + &prefix + ".partial.pk").unwrap();
-        let partial_pk: MultiStarkPartialProvingKey<BabyBearPoseidon2Config> =
+        let partial_pk: MultiStarkPartialProvingKey<SC> =
             bincode::deserialize(&encoded_pk).unwrap();
         let proof = page_controller.prove(
-            &engine,
+            engine,
             &partial_pk,
             &mut trace_builder,
             init_page_pdata,

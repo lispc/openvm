@@ -1,19 +1,21 @@
 use crate::commands::keygen::KeygenCommand;
 use crate::commands::{cache, keygen, mock, prove, verify};
+use afs_test_utils::engine::StarkEngine;
 use afs_test_utils::page_config::PageConfig;
 use clap::Parser;
 use clap::Subcommand;
+use p3_uni_stark::StarkGenericConfig;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about = "AFS CLI")]
 #[command(propagate_version = true)]
-pub struct Cli {
+pub struct Cli<SC: StarkGenericConfig> {
     #[command(subcommand)]
-    pub command: CliCommand,
+    pub command: CliCommand<SC>,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum CliCommand {
+pub enum CliCommand<SC: StarkGenericConfig> {
     #[command(name = "mock", about = "Mock functions")]
     /// Mock functions
     Mock(mock::MockCommand),
@@ -31,15 +33,15 @@ pub enum CliCommand {
 
     #[command(name = "prove", about = "Generates a multi-STARK proof")]
     /// Generates a multi-STARK proof
-    Prove(prove::ProveCommand),
+    Prove(prove::ProveCommand<SC>),
 
     #[command(name = "verify", about = "Verifies a multi-STARK proof")]
     /// Verifies a multi-STARK proof
     Verify(verify::VerifyCommand),
 }
 
-impl Cli {
-    pub fn run(config: &PageConfig) -> Self {
+impl<SC: StarkGenericConfig> Cli<SC> {
+    pub fn run(config: &PageConfig, engine: &dyn StarkEngine<SC>) -> Self {
         let cli = Self::parse();
         match &cli.command {
             CliCommand::Mock(mock) => {
@@ -55,7 +57,7 @@ impl Cli {
                 cache.execute(config).unwrap();
             }
             CliCommand::Prove(prove) => {
-                prove.execute(config).unwrap();
+                prove.execute(config, engine).unwrap();
             }
             CliCommand::Verify(verify) => {
                 verify.execute(config).unwrap();
