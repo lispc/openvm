@@ -9,7 +9,7 @@ use afs_stark_backend::{
     prover::trace::{ProverTraceData, TraceCommitmentBuilder},
 };
 use afs_test_utils::{
-    config::baby_bear_poseidon2::{engine_from_perm, BabyBearPermutationEngine},
+    config::baby_bear_poseidon2::{engine_from_perm, random_perm, BabyBearPermutationEngine},
     engine::{StarkEngine, StarkEngineWithHashInstrumentation},
     page_config::{PageConfig, PageMode},
 };
@@ -24,7 +24,7 @@ use logical_interface::{
 };
 use p3_baby_bear::BabyBear;
 use p3_uni_stark::StarkGenericConfig;
-use p3_util::log2_strict_usize;
+use p3_util::{log2_ceil_usize, log2_strict_usize};
 
 use crate::commands::{read_from_path, write_bytes};
 
@@ -161,7 +161,8 @@ where
         let ops_sender = ExecutionAir::new(ops_bus_index, idx_len, data_len);
         // let engine = config::baby_bear_poseidon2::default_engine(max_log_degree);
 
-        let pcs_log_degree = config.page.bits_per_fe;
+        let pcs_log_degree = log2_ceil_usize(height);
+        let perm = random_perm();
         let engine = engine_from_perm(perm, pcs_log_degree, config.fri_params);
         let prover = engine.prover();
         let mut trace_builder = TraceCommitmentBuilder::new(prover.pcs());
