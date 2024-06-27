@@ -1,5 +1,6 @@
 use alloc::collections::BTreeMap;
 use alloc::vec;
+use stark_vm::cpu::WORD_SIZE;
 use std::collections::BTreeSet;
 
 use backtrace::Backtrace;
@@ -126,7 +127,34 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     self.push(AsmInstruction::AddFI(dst.fp(), lhs.fp(), rhs), trace);
                 }
                 DslIr::AddE(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::AddE(dst.fp(), lhs.fp(), rhs.fp()), trace);
+                    self.push(
+                        AsmInstruction::AddF(dst.fp(), lhs.fp(), rhs.fp()),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddF(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            rhs.fp() + WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddF(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            rhs.fp() + 2 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddF(
+                            dst.fp() + 3 * WORD_SIZE as i32,
+                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            rhs.fp() + 3 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
                 }
                 DslIr::AddEI(dst, lhs, rhs) => {
                     self.push(AsmInstruction::AddEI(dst.fp(), lhs.fp(), rhs), trace);
