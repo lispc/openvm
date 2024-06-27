@@ -8,7 +8,6 @@ pub mod bridge;
 pub mod columns;
 pub mod trace;
 
-pub const WORD_SIZE: usize = 1;
 pub const INST_WIDTH: usize = 1;
 
 pub const READ_INSTRUCTION_BUS: usize = 0;
@@ -21,6 +20,7 @@ pub const NUM_ARITHMETIC_OPERATIONS: usize = 4;
 
 pub const MAX_READS_PER_CYCLE: usize = 2;
 pub const MAX_WRITES_PER_CYCLE: usize = 1;
+pub const MAX_ACCESSES_PER_CYCLE: usize = MAX_READS_PER_CYCLE + MAX_WRITES_PER_CYCLE;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(usize)]
@@ -73,20 +73,18 @@ impl CpuOptions {
 }
 
 #[derive(Default, Clone)]
-pub struct CpuAir {
+pub struct CpuAir<const WORD_SIZE: usize> {
     pub options: CpuOptions,
 }
 
 #[derive(Default)]
-pub struct CpuChip {
-    pub air: CpuAir,
-    //pub range_checker: Arc<RangeCheckerGateChip>,
+pub struct CpuChip<const WORD_SIZE: usize> {
+    pub air: CpuAir<WORD_SIZE>,
 }
 
-impl CpuChip {
+impl<const WORD_SIZE: usize> CpuChip<WORD_SIZE> {
     pub fn new(
         field_arithmetic_enabled: bool,
-        //range_checker: Arc<RangeCheckerGateChip>,
     ) -> Self {
         let air = CpuAir {
             options: CpuOptions {
@@ -95,7 +93,7 @@ impl CpuChip {
         };
 
         Self {
-            air, /*range_checker*/
+            air,
         }
     }
 }

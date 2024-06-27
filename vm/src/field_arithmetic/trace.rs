@@ -46,7 +46,7 @@ fn generate_cols<T: Field>(op: OpCode, x: T, y: T) -> FieldArithmeticCols<T> {
 
 impl FieldArithmeticAir {
     /// Generates trace for field arithmetic chip.
-    pub fn generate_trace<T: Field>(&self, prog_exec: &ProgramExecution<T>) -> RowMajorMatrix<T> {
+    pub fn generate_trace<T: Field>(&self, prog_exec: &ProgramExecution<1, T>) -> RowMajorMatrix<T> {
         let trace = prog_exec
             .arithmetic_ops
             .iter()

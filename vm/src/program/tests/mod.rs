@@ -28,7 +28,7 @@ fn test_flatten_fromslice_roundtrip() {
 }
 
 fn interaction_test(is_field_arithmetic_enabled: bool, program: Vec<Instruction<BabyBear>>) {
-    let cpu_chip = CpuChip::new(is_field_arithmetic_enabled);
+    let cpu_chip = CpuChip::<1>::new(is_field_arithmetic_enabled);
     let execution = cpu_chip.generate_program_execution(program.clone());
 
     let air = ProgramAir::new(program);
@@ -112,7 +112,7 @@ fn test_program_negative() {
         Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
     ];
 
-    let cpu_chip = CpuChip::new(true);
+    let cpu_chip = CpuChip::<1>::new(true);
     let execution = cpu_chip.generate_program_execution(program.clone());
 
     let air = ProgramAir { program };

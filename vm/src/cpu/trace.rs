@@ -1,4 +1,7 @@
-use std::collections::{HashMap, VecDeque};
+use std::{
+    array::from_fn,
+    collections::{HashMap, VecDeque},
+};
 
 use p3_field::{Field, PrimeField64};
 use p3_matrix::dense::RowMajorMatrix;
@@ -24,7 +27,27 @@ pub struct Instruction<F> {
     pub e: F,
 }
 
-fn isize_to_field<F: PrimeField64>(value: isize) -> F {
+impl<F: PrimeField64> ArithmeticOperation<F> {
+    pub fn from_isize(opcode: OpCode, operand1: isize, operand2: isize, result: isize) -> Self {
+        Self {
+            opcode,
+            operand1: isize_to_field::<F>(operand1),
+            operand2: isize_to_field::<F>(operand2),
+            result: isize_to_field::<F>(result),
+        }
+    }
+
+    pub fn to_vec(&self) -> Vec<F> {
+        vec![
+            F::from_canonical_usize(self.opcode as usize),
+            self.operand1,
+            self.operand2,
+            self.result,
+        ]
+    }
+}
+
+pub fn isize_to_field<F: PrimeField64>(value: isize) -> F {
     if value < 0 {
         return F::neg_one() * F::from_canonical_usize(value.unsigned_abs());
     }
@@ -52,33 +75,17 @@ impl<F: PrimeField64> Instruction<F> {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct MemoryAccess<F> {
+pub struct MemoryAccess<const WORD_SIZE: usize, F> {
     pub timestamp: usize,
     pub op_type: OpType,
     pub address_space: F,
     pub address: F,
-    pub data: F,
+    pub data: [F; WORD_SIZE],
 }
 
-impl<F: PrimeField64> MemoryAccess<F> {
-    pub fn from_isize(
-        timestamp: isize,
-        op_type: OpType,
-        address_space: isize,
-        address: isize,
-        data: isize,
-    ) -> Self {
-        Self {
-            timestamp: timestamp as usize,
-            op_type,
-            address_space: isize_to_field::<F>(address_space),
-            address: isize_to_field::<F>(address),
-            data: isize_to_field::<F>(data),
-        }
-    }
-}
-
-fn memory_access_to_cols<F: PrimeField64>(access: Option<MemoryAccess<F>>) -> MemoryAccessCols<F> {
+fn memory_access_to_cols<const WORD_SIZE: usize, F: PrimeField64>(
+    access: Option<MemoryAccess<WORD_SIZE, F>>,
+) -> MemoryAccessCols<WORD_SIZE, F> {
     let (enabled, address_space, address, value) = match access {
         Some(MemoryAccess {
             address_space,
@@ -86,7 +93,7 @@ fn memory_access_to_cols<F: PrimeField64>(access: Option<MemoryAccess<F>>) -> Me
             data,
             ..
         }) => (F::one(), address_space, address, data),
-        None => (F::zero(), F::one(), F::zero(), F::zero()),
+        None => (F::zero(), F::one(), F::zero(), [F::zero(); WORD_SIZE]),
     };
     let is_zero_cols = LocalTraceInstructions::generate_trace_row(&IsZeroAir {}, address_space);
     let is_immediate = is_zero_cols.io.is_zero;
@@ -109,26 +116,6 @@ pub struct ArithmeticOperation<F> {
     pub result: F,
 }
 
-impl<F: PrimeField64> ArithmeticOperation<F> {
-    pub fn from_isize(opcode: OpCode, operand1: isize, operand2: isize, result: isize) -> Self {
-        Self {
-            opcode,
-            operand1: isize_to_field::<F>(operand1),
-            operand2: isize_to_field::<F>(operand2),
-            result: isize_to_field::<F>(result),
-        }
-    }
-
-    pub fn to_vec(&self) -> Vec<F> {
-        vec![
-            F::from_canonical_usize(self.opcode as usize),
-            self.operand1,
-            self.operand2,
-            self.result,
-        ]
-    }
-}
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct FieldExtensionOperation<F> {
     pub opcode: OpCode,
@@ -147,15 +134,15 @@ impl<F: Field> FieldExtensionOperation<F> {
     }
 }
 
-pub struct ProgramExecution<F> {
+pub struct ProgramExecution<const WORD_SIZE: usize, F> {
     pub program: Vec<Instruction<F>>,
-    pub trace_rows: Vec<CpuCols<F>>,
+    pub trace_rows: Vec<CpuCols<WORD_SIZE, F>>,
     pub execution_frequencies: Vec<F>,
-    pub memory_accesses: Vec<MemoryAccess<F>>,
+    pub memory_accesses: Vec<MemoryAccess<WORD_SIZE, F>>,
     pub arithmetic_ops: Vec<ArithmeticOperation<F>>,
 }
 
-impl<F: PrimeField64> ProgramExecution<F> {
+impl<const WORD_SIZE: usize, F: PrimeField64> ProgramExecution<WORD_SIZE, F> {
     pub fn trace(&self) -> RowMajorMatrix<F> {
         let rows: Vec<F> = self
             .trace_rows
@@ -167,15 +154,15 @@ impl<F: PrimeField64> ProgramExecution<F> {
     }
 }
 
-struct Memory<F> {
-    data: HashMap<F, HashMap<F, F>>,
-    log: Vec<MemoryAccess<F>>,
+struct Memory<const WORD_SIZE: usize, F> {
+    data: HashMap<F, HashMap<F, [F; WORD_SIZE]>>,
+    log: Vec<MemoryAccess<WORD_SIZE, F>>,
     clock_cycle: usize,
-    reads_this_cycle: VecDeque<MemoryAccess<F>>,
-    writes_this_cycle: VecDeque<MemoryAccess<F>>,
+    reads_this_cycle: VecDeque<MemoryAccess<WORD_SIZE, F>>,
+    writes_this_cycle: VecDeque<MemoryAccess<WORD_SIZE, F>>,
 }
 
-impl<F: PrimeField64> Memory<F> {
+impl<const WORD_SIZE: usize, F: PrimeField64> Memory<WORD_SIZE, F> {
     fn new() -> Self {
         let mut data = HashMap::new();
         data.insert(F::one(), HashMap::new());
@@ -190,13 +177,13 @@ impl<F: PrimeField64> Memory<F> {
         }
     }
 
-    fn read(&mut self, address_space: F, address: F) -> F {
+    fn read(&mut self, address_space: F, address: F) -> [F; WORD_SIZE] {
         let data = if address_space == F::zero() {
-            address
+            [address; WORD_SIZE]
         } else {
             *self.data[&address_space]
                 .get(&address)
-                .unwrap_or(&F::zero())
+                .unwrap_or(&[F::zero(); WORD_SIZE])
         };
         let read = MemoryAccess {
             timestamp: ((MAX_READS_PER_CYCLE + MAX_WRITES_PER_CYCLE) * self.clock_cycle)
@@ -213,7 +200,7 @@ impl<F: PrimeField64> Memory<F> {
         data
     }
 
-    fn write(&mut self, address_space: F, address: F, data: F) {
+    fn write(&mut self, address_space: F, address: F, data: [F; WORD_SIZE]) {
         if address_space == F::zero() {
             panic!("Attempted to write to address space 0");
         } else {
@@ -236,7 +223,12 @@ impl<F: PrimeField64> Memory<F> {
         }
     }
 
-    fn complete_clock_cycle(&mut self) -> (VecDeque<MemoryAccess<F>>, VecDeque<MemoryAccess<F>>) {
+    fn complete_clock_cycle(
+        &mut self,
+    ) -> (
+        VecDeque<MemoryAccess<WORD_SIZE, F>>,
+        VecDeque<MemoryAccess<WORD_SIZE, F>>,
+    ) {
         self.clock_cycle += 1;
         let reads = std::mem::take(&mut self.reads_this_cycle);
         let writes = std::mem::take(&mut self.writes_this_cycle);
@@ -244,11 +236,22 @@ impl<F: PrimeField64> Memory<F> {
     }
 }
 
-impl CpuChip {
+impl<const WORD_SIZE: usize> CpuChip<WORD_SIZE> {
+    fn compose<F: PrimeField64>(&self, word: [F; WORD_SIZE]) -> F {
+        for &cell in word.iter().skip(1) {
+            assert_eq!(cell, F::zero());
+        }
+        word[0]
+    }
+
+    fn decompose<F: PrimeField64>(&self, field_elem: F) -> [F; WORD_SIZE] {
+        from_fn(|i| if i == 0 { field_elem } else { F::zero() })
+    }
+
     pub fn generate_program_execution<F: PrimeField64>(
         &self,
         program: Vec<Instruction<F>>,
-    ) -> ProgramExecution<F> {
+    ) -> ProgramExecution<WORD_SIZE, F> {
         let mut rows = vec![];
         let mut execution_frequencies = vec![F::zero(); program.len()];
         let mut arithmetic_operations = vec![];
@@ -289,19 +292,23 @@ impl CpuChip {
             match opcode {
                 // d[a] <- e[d[c] + b]
                 LOADW => {
-                    let base_pointer = memory.read(d, c);
+                    let base_pointer = self.compose(memory.read(d, c));
                     let value = memory.read(e, base_pointer + b);
                     memory.write(d, a, value);
                 }
                 // e[d[c] + b] <- d[a]
                 STOREW => {
-                    let base_pointer = memory.read(d, c);
+                    let base_pointer = self.compose(memory.read(d, c));
                     let value = memory.read(d, a);
                     memory.write(e, base_pointer + b, value);
                 }
                 // d[a] <- pc + INST_WIDTH, pc <- pc + b
                 JAL => {
-                    memory.write(d, a, pc + F::from_canonical_usize(INST_WIDTH));
+                    memory.write(
+                        d,
+                        a,
+                        self.decompose(pc + F::from_canonical_usize(INST_WIDTH)),
+                    );
                     next_pc = pc + b;
                 }
                 // If d[a] = e[b], pc <- pc + c
@@ -326,12 +333,12 @@ impl CpuChip {
                 opcode @ (FADD | FSUB | FMUL | FDIV) => {
                     if self.air.options.field_arithmetic_enabled {
                         // read from d[b] and e[c]
-                        let operand1 = memory.read(d, b);
-                        let operand2 = memory.read(e, c);
+                        let operand1 = self.compose(memory.read(d, b));
+                        let operand2 = self.compose(memory.read(e, c));
                         // write to d[a]
                         let result =
                             FieldArithmeticAir::solve(opcode, (operand1, operand2)).unwrap();
-                        memory.write(d, a, result);
+                        memory.write(d, a, self.decompose(result));
 
                         arithmetic_operations.push(ArithmeticOperation {
                             opcode,
@@ -360,16 +367,14 @@ impl CpuChip {
 
             let is_equal_cols = LocalTraceInstructions::generate_trace_row(
                 &IsEqualAir {},
-                (read1.data, read2.data),
+                (read1.data[0], read2.data[0]),
             );
             let beq_check = is_equal_cols.io.is_equal;
             let is_equal_aux = is_equal_cols.aux.inv;
 
             let aux = CpuAuxCols {
                 operation_flags,
-                read1,
-                read2,
-                write,
+                accesses: [read1, read2, write],
                 beq_check,
                 is_equal_aux,
             };

@@ -1,3 +1,5 @@
+use std::array::from_fn;
+
 use afs_chips::is_zero::IsZeroAir;
 use afs_stark_backend::verifier::VerificationError;
 use afs_test_utils::config::baby_bear_poseidon2::run_simple_test_no_pis;
@@ -11,21 +13,49 @@ use crate::cpu::{CpuChip, CpuOptions};
 use crate::memory::OpType;
 
 use super::columns::MemoryAccessCols;
-use super::trace::ProgramExecution;
+use super::trace::{isize_to_field, ProgramExecution};
 use super::{
     trace::{ArithmeticOperation, Instruction, MemoryAccess},
     OpCode::*,
 };
 use super::{ARITHMETIC_BUS, MEMORY_BUS, READ_INSTRUCTION_BUS};
 
+const TEST_WORD_SIZE: usize = 4;
+
+
+
+impl<const WORD_SIZE: usize, F: PrimeField64> MemoryAccess<WORD_SIZE, F> {
+    pub fn from_isize(
+        timestamp: isize,
+        op_type: OpType,
+        address_space: isize,
+        address: isize,
+        data: isize,
+    ) -> Self {
+        Self {
+            timestamp: timestamp as usize,
+            op_type,
+            address_space: isize_to_field::<F>(address_space),
+            address: isize_to_field::<F>(address),
+            data: array_from_first_elem::<WORD_SIZE, F>(isize_to_field::<F>(data)),
+        }
+    }
+}
+
+fn array_from_first_elem<const WORD_SIZE: usize, F: PrimeField64>(data: F) -> [F; WORD_SIZE] {
+    from_fn(|i| if i == 0 { data } else { F::zero() })
+}
+
+
+
 #[test]
 fn test_flatten_fromslice_roundtrip() {
-    let num_cols = CpuCols::<usize>::get_width(CpuOptions {
+    let num_cols = CpuCols::<TEST_WORD_SIZE, usize>::get_width(CpuOptions {
         field_arithmetic_enabled: true,
     });
     let all_cols = (0..num_cols).collect::<Vec<usize>>();
 
-    let cols_numbered = CpuCols::<usize>::from_slice(
+    let cols_numbered = CpuCols::<TEST_WORD_SIZE, usize>::from_slice(
         &all_cols,
         CpuOptions {
             field_arithmetic_enabled: true,
@@ -40,11 +70,11 @@ fn test_flatten_fromslice_roundtrip() {
     assert_eq!(num_cols, flattened.len());
 }
 
-fn program_execution_test<F: PrimeField64>(
+fn program_execution_test<const WORD_SIZE: usize, F: PrimeField64>(
     is_field_arithmetic_enabled: bool,
     program: Vec<Instruction<F>>,
     mut expected_execution: Vec<usize>,
-    expected_memory_log: Vec<MemoryAccess<F>>,
+    expected_memory_log: Vec<MemoryAccess<WORD_SIZE, F>>,
     expected_arithmetic_operations: Vec<ArithmeticOperation<F>>,
 ) {
     let chip = CpuChip::new(is_field_arithmetic_enabled);
@@ -84,13 +114,13 @@ fn program_execution_test<F: PrimeField64>(
     }
 }
 
-fn air_test(is_field_arithmetic_enabled: bool, program: Vec<Instruction<BabyBear>>) {
+fn air_test<const WORD_SIZE: usize>(is_field_arithmetic_enabled: bool, program: Vec<Instruction<BabyBear>>) {
     let chip = CpuChip::new(is_field_arithmetic_enabled);
     let execution = chip.generate_program_execution(program);
-    air_test_custom_execution(is_field_arithmetic_enabled, execution);
+    air_test_custom_execution::<WORD_SIZE>(is_field_arithmetic_enabled, execution);
 }
 
-fn air_test_change_pc(
+fn air_test_change_pc<const WORD_SIZE: usize>(
     is_field_arithmetic_enabled: bool,
     program: Vec<Instruction<BabyBear>>,
     change_row: usize,
@@ -106,22 +136,22 @@ fn air_test_change_pc(
     execution.execution_frequencies[old_value] -= BabyBear::one();
     execution.execution_frequencies[change_value] += BabyBear::one();
 
-    air_test_custom_execution_with_failure(is_field_arithmetic_enabled, execution, should_fail);
+    air_test_custom_execution_with_failure::<WORD_SIZE>(is_field_arithmetic_enabled, execution, should_fail);
 }
 
-fn air_test_custom_execution(
+fn air_test_custom_execution<const WORD_SIZE: usize>(
     is_field_arithmetic_enabled: bool,
-    execution: ProgramExecution<BabyBear>,
+    execution: ProgramExecution<WORD_SIZE, BabyBear>,
 ) {
     air_test_custom_execution_with_failure(is_field_arithmetic_enabled, execution, false);
 }
 
-fn air_test_custom_execution_with_failure(
+fn air_test_custom_execution_with_failure<const WORD_SIZE: usize>(
     is_field_arithmetic_enabled: bool,
-    execution: ProgramExecution<BabyBear>,
+    execution: ProgramExecution<WORD_SIZE, BabyBear>,
     should_fail: bool,
 ) {
-    let chip = CpuChip::new(is_field_arithmetic_enabled);
+    let chip = CpuChip::<WORD_SIZE>::new(is_field_arithmetic_enabled);
     let trace = execution.trace();
 
     let program_air = DummyInteractionAir::new(7, false, READ_INSTRUCTION_BUS);
@@ -152,8 +182,8 @@ fn air_test_custom_execution_with_failure(
             BabyBear::from_bool(memory_access.op_type == OpType::Write),
             memory_access.address_space,
             memory_access.address,
-            memory_access.data,
         ]);
+        memory_rows.extend(memory_access.data);
     }
     while !(memory_rows.len() / 6).is_power_of_two() {
         memory_rows.push(BabyBear::zero());
@@ -256,14 +286,14 @@ fn test_cpu_1() {
         ));
     }
 
-    program_execution_test::<BabyBear>(
+    program_execution_test::<TEST_WORD_SIZE, BabyBear>(
         true,
         program.clone(),
         expected_execution,
         expected_memory_log,
         expected_arithmetic_operations,
     );
-    air_test(true, program);
+    air_test::<TEST_WORD_SIZE>(true, program);
 }
 
 #[test]
@@ -298,14 +328,14 @@ fn test_cpu_without_field_arithmetic() {
         MemoryAccess::from_isize(6, OpType::Read, 1, 0, 5),
     ];
 
-    program_execution_test::<BabyBear>(
+    program_execution_test::<TEST_WORD_SIZE, BabyBear>(
         field_arithmetic_enabled,
         program.clone(),
         expected_execution,
         expected_memory_log,
         vec![],
     );
-    air_test(field_arithmetic_enabled, program);
+    air_test::<TEST_WORD_SIZE>(field_arithmetic_enabled, program);
 }
 
 #[test]
@@ -331,7 +361,7 @@ fn test_cpu_negative_wrong_pc() {
         Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
     ];
 
-    air_test_change_pc(true, program, 2, 3, true);
+    air_test_change_pc::<TEST_WORD_SIZE>(true, program, 2, 3, true);
 }
 
 #[test]
@@ -350,7 +380,7 @@ fn test_cpu_negative_wrong_pc_check() {
         Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
     ];
 
-    air_test_change_pc(true, program, 2, 2, false);
+    air_test_change_pc::<TEST_WORD_SIZE>(true, program, 2, 2, false);
 }
 
 #[test]
@@ -369,7 +399,7 @@ fn test_cpu_negative_hasnt_terminated() {
     execution.trace_rows.remove(execution.trace_rows.len() - 1);
     execution.execution_frequencies[1] = AbstractField::zero();
 
-    air_test_custom_execution(true, execution);
+    air_test_custom_execution::<TEST_WORD_SIZE>(true, execution);
 }
 
 #[test]
@@ -391,20 +421,20 @@ fn test_cpu_negative_secret_write() {
         .clone();
     let is_zero_aux = is_zero_trace.row_mut(0)[2];
 
-    execution.trace_rows[0].aux.write = MemoryAccessCols {
+    execution.trace_rows[0].aux.accesses[2] = MemoryAccessCols {
         enabled: AbstractField::one(),
         address_space: AbstractField::one(),
         is_immediate: AbstractField::zero(),
         is_zero_aux,
         address: AbstractField::zero(),
-        data: AbstractField::from_canonical_usize(115),
+        data: array_from_first_elem(AbstractField::from_canonical_usize(115)),
     };
 
     execution
         .memory_accesses
         .push(MemoryAccess::from_isize(0, OpType::Write, 1, 0, 115));
 
-    air_test_custom_execution(true, execution);
+    air_test_custom_execution::<TEST_WORD_SIZE>(true, execution);
 }
 
 #[test]
@@ -420,11 +450,11 @@ fn test_cpu_negative_disable_write() {
     let chip = CpuChip::new(true);
     let mut execution = chip.generate_program_execution(program);
 
-    execution.trace_rows[0].aux.write.enabled = AbstractField::zero();
+    execution.trace_rows[0].aux.accesses[2].enabled = AbstractField::zero();
 
     execution.memory_accesses.remove(0);
 
-    air_test_custom_execution(true, execution);
+    air_test_custom_execution::<TEST_WORD_SIZE>(true, execution);
 }
 
 #[test]
@@ -440,9 +470,9 @@ fn test_cpu_negative_disable_read() {
     let chip = CpuChip::new(true);
     let mut execution = chip.generate_program_execution(program);
 
-    execution.trace_rows[0].aux.read1.enabled = AbstractField::zero();
+    execution.trace_rows[0].aux.accesses[0].enabled = AbstractField::zero();
 
     execution.memory_accesses.remove(0);
 
-    air_test_custom_execution(true, execution);
+    air_test_custom_execution::<TEST_WORD_SIZE>(true, execution);
 }
