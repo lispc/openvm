@@ -33,6 +33,11 @@ pub(crate) const A0: i32 = -8;
 
 pub const STACK_SIZE: usize = 1 << 24;
 
+pub const X1: i32 = 0;
+pub const X2: i32 = 1;
+pub const X3: i32 = 2;
+pub const X4: i32 = 3;
+
 /// The assembly compiler.
 #[derive(Debug, Clone, Default)]
 pub struct AsmCompiler<F, EF> {
