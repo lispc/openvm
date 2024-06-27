@@ -165,7 +165,34 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     self.push(AsmInstruction::AddEI(dst.fp(), lhs.fp(), rhs), trace);
                 }
                 DslIr::AddEF(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::AddE(dst.fp(), lhs.fp(), rhs.fp()), trace);
+                    self.push(
+                        AsmInstruction::AddF(dst.fp(), lhs.fp(), rhs.fp()),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddF(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            rhs.fp() + WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddF(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            rhs.fp() + 2 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddF(
+                            dst.fp() + 3 * WORD_SIZE as i32,
+                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            rhs.fp() + 3 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
                 }
                 DslIr::AddEFFI(dst, lhs, rhs) => {
                     self.push(AsmInstruction::AddEI(dst.fp(), lhs.fp(), rhs), trace);
