@@ -6,6 +6,12 @@ use stark_vm::cpu::trace::Instruction;
 use stark_vm::cpu::OpCode;
 use stark_vm::cpu::OpCode::*;
 
+#[derive(Clone, Copy)]
+pub struct CompilerOptions {
+    pub compile_prints: bool,
+    pub field_arithmetic_enabled: bool,
+}
+
 fn inst<F: PrimeField64>(
     opcode: OpCode,
     op_a: F,
@@ -47,94 +53,11 @@ fn register<F: PrimeField64>(value: i32) -> F {
     F::from_canonical_usize(value as usize)
 }
 
-fn convert_instruction<F: PrimeField64, EF: ExtensionField<F>>(
+fn convert_field_arithmetic_instruction<F: PrimeField64, EF: ExtensionField<F>>(
     instruction: AsmInstruction<F, EF>,
-    pc: F,
-    labels: impl Fn(F) -> F,
+    utility_register: F,
 ) -> Vec<Instruction<F>> {
-    let utility_register = F::zero();
     match instruction {
-        AsmInstruction::Break(_) => panic!("Unresolved break instruction"),
-        AsmInstruction::LoadF(dst, src, index, offset, size) => vec![
-            // register[util] <- register[index] * size
-            inst(
-                FMUL,
-                utility_register,
-                register(index),
-                size,
-                AS::Register,
-                AS::Immediate,
-            ),
-            // register[util] <- register[src] + register[util]
-            inst(
-                FADD,
-                utility_register,
-                register(src),
-                utility_register,
-                AS::Register,
-                AS::Register,
-            ),
-            // register[dst] <- mem[register[util] + offset]
-            inst(
-                LOADW,
-                register(dst),
-                offset,
-                utility_register,
-                AS::Register,
-                AS::Memory,
-            ),
-        ],
-        AsmInstruction::LoadFI(dst, src, index, offset, size) => vec![
-            // register[dst] <- mem[register[src] + ((index * size) + offset)]
-            inst(
-                LOADW,
-                register(dst),
-                (index * size) + offset,
-                register(src),
-                AS::Register,
-                AS::Memory,
-            ),
-        ],
-        AsmInstruction::StoreF(val, addr, index, offset, size) => vec![
-            // register[util] <- register[index] * size
-            inst(
-                FMUL,
-                utility_register,
-                register(index),
-                size,
-                AS::Register,
-                AS::Immediate,
-            ),
-            // register[util] <- register[src] + register[util]
-            inst(
-                FADD,
-                utility_register,
-                register(addr),
-                utility_register,
-                AS::Register,
-                AS::Register,
-            ),
-            //  mem[register[util] + offset] <- register[val]
-            inst(
-                STOREW,
-                register(val),
-                offset,
-                utility_register,
-                AS::Register,
-                AS::Memory,
-            ),
-        ],
-        AsmInstruction::StoreFI(val, addr, index, offset, size) => vec![
-            // mem[register[addr] + ((index * size) + offset)] <- register[val]
-            inst(
-                STOREW,
-                register(val),
-                (index * size) + offset,
-                register(addr),
-                AS::Register,
-                AS::Memory,
-            ),
-        ],
         AsmInstruction::AddF(dst, lhs, rhs) => vec![
             // register[dst] <- register[lhs] + register[rhs]
             inst(
@@ -263,6 +186,131 @@ fn convert_instruction<F: PrimeField64, EF: ExtensionField<F>>(
                 AS::Register,
             ),
         ],
+        _ => panic!(
+            "Illegal argument to convert_field_arithmetic_instruction: {:?}",
+            instruction
+        ),
+    }
+}
+
+fn convert_print_instruction<F: PrimeField64, EF: ExtensionField<F>>(
+    instruction: AsmInstruction<F, EF>,
+) -> Vec<Instruction<F>> {
+    match instruction {
+        AsmInstruction::PrintV(src) => vec![inst(
+            PRINTF,
+            register(src),
+            F::zero(),
+            F::zero(),
+            AS::Register,
+            AS::Immediate,
+        )],
+        AsmInstruction::PrintF(src) => vec![inst(
+            PRINTF,
+            register(src),
+            F::zero(),
+            F::zero(),
+            AS::Register,
+            AS::Immediate,
+        )],
+        AsmInstruction::PrintE(..) => panic!("Unsupported operation: PrintE"),
+        _ => panic!(
+            "Illegal argument to convert_print_instruction: {:?}",
+            instruction
+        ),
+    }
+}
+
+fn convert_instruction<F: PrimeField64, EF: ExtensionField<F>>(
+    instruction: AsmInstruction<F, EF>,
+    pc: F,
+    labels: impl Fn(F) -> F,
+    options: CompilerOptions,
+) -> Vec<Instruction<F>> {
+    let utility_register = F::zero();
+    match instruction {
+        AsmInstruction::Break(_) => panic!("Unresolved break instruction"),
+        AsmInstruction::LoadF(dst, src, index, offset, size) => vec![
+            // register[util] <- register[index] * size
+            inst(
+                FMUL,
+                utility_register,
+                register(index),
+                size,
+                AS::Register,
+                AS::Immediate,
+            ),
+            // register[util] <- register[src] + register[util]
+            inst(
+                FADD,
+                utility_register,
+                register(src),
+                utility_register,
+                AS::Register,
+                AS::Register,
+            ),
+            // register[dst] <- mem[register[util] + offset]
+            inst(
+                LOADW,
+                register(dst),
+                offset,
+                utility_register,
+                AS::Register,
+                AS::Memory,
+            ),
+        ],
+        AsmInstruction::LoadFI(dst, src, index, offset, size) => vec![
+            // register[dst] <- mem[register[src] + ((index * size) + offset)]
+            inst(
+                LOADW,
+                register(dst),
+                (index * size) + offset,
+                register(src),
+                AS::Register,
+                AS::Memory,
+            ),
+        ],
+        AsmInstruction::StoreF(val, addr, index, offset, size) => vec![
+            // register[util] <- register[index] * size
+            inst(
+                FMUL,
+                utility_register,
+                register(index),
+                size,
+                AS::Register,
+                AS::Immediate,
+            ),
+            // register[util] <- register[src] + register[util]
+            inst(
+                FADD,
+                utility_register,
+                register(addr),
+                utility_register,
+                AS::Register,
+                AS::Register,
+            ),
+            //  mem[register[util] + offset] <- register[val]
+            inst(
+                STOREW,
+                register(val),
+                offset,
+                utility_register,
+                AS::Register,
+                AS::Memory,
+            ),
+        ],
+        AsmInstruction::StoreFI(val, addr, index, offset, size) => vec![
+            // mem[register[addr] + ((index * size) + offset)] <- register[val]
+            inst(
+                STOREW,
+                register(val),
+                (index * size) + offset,
+                register(addr),
+                AS::Register,
+                AS::Memory,
+            ),
+        ],
+
         AsmInstruction::Jal(dst, label, offset) => {
             assert_eq!(offset, F::zero());
             vec![
@@ -384,38 +432,51 @@ fn convert_instruction<F: PrimeField64, EF: ExtensionField<F>>(
                 AS::Immediate,
             ),
         ],
-        AsmInstruction::PrintV(src) => vec![inst(
-            PRINTF,
-            register(src),
-            F::zero(),
-            F::zero(),
-            AS::Register,
-            AS::Immediate,
-        )],
-        AsmInstruction::PrintF(src) => vec![inst(
-            PRINTF,
-            register(src),
-            F::zero(),
-            F::zero(),
-            AS::Register,
-            AS::Immediate,
-        )],
+        AsmInstruction::AddF(..)
+        | AsmInstruction::SubF(..)
+        | AsmInstruction::MulF(..)
+        | AsmInstruction::DivF(..)
+        | AsmInstruction::AddFI(..)
+        | AsmInstruction::SubFI(..)
+        | AsmInstruction::MulFI(..)
+        | AsmInstruction::DivFI(..)
+        | AsmInstruction::SubFIN(..)
+        | AsmInstruction::DivFIN(..) => {
+            if options.field_arithmetic_enabled {
+                convert_field_arithmetic_instruction(instruction, utility_register)
+            } else {
+                panic!(
+                    "Unsupported instruction {:?}, field arithmetic is disabled",
+                    instruction
+                )
+            }
+        }
+        AsmInstruction::PrintV(..) | AsmInstruction::PrintF(..) | AsmInstruction::PrintE(..) => {
+            if options.compile_prints {
+                convert_print_instruction(instruction)
+            } else {
+                vec![]
+            }
+        }
         _ => panic!("Unsupported instruction {:?}", instruction),
     }
 }
 
 pub fn convert_program<F: PrimeField64, EF: ExtensionField<F>>(
     program: AssemblyCode<F, EF>,
+    options: CompilerOptions,
 ) -> Vec<Instruction<F>> {
     let mut block_start = vec![];
     let mut pc = 0;
     for block in program.blocks.iter() {
         block_start.push(pc);
         for instruction in block.0.iter() {
-            let instructions =
-                convert_instruction(instruction.clone(), F::from_canonical_usize(pc), |label| {
-                    label
-                });
+            let instructions = convert_instruction(
+                instruction.clone(),
+                F::from_canonical_usize(pc),
+                |label| label,
+                options,
+            );
             pc += instructions.len();
         }
     }
@@ -429,6 +490,7 @@ pub fn convert_program<F: PrimeField64, EF: ExtensionField<F>>(
                 instruction.clone(),
                 F::from_canonical_usize(result.len()),
                 labels,
+                options,
             ));
         }
     }
