@@ -38,6 +38,8 @@ pub const X2: i32 = 1;
 pub const X3: i32 = 2;
 pub const X4: i32 = 3;
 
+pub const BETA: usize = 11;
+
 /// The assembly compiler.
 #[derive(Debug, Clone, Default)]
 pub struct AsmCompiler<F, EF> {
@@ -107,6 +109,9 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
             self.push(AsmInstruction::AddFI(HEAP_PTR, ZERO, stack_size), None);
         }
 
+        const WORD_SIZE_I32: i32 = WORD_SIZE as i32;
+        let beta_f = F::from_canonical_usize(BETA);
+
         // For each operation, generate assembly instructions.
         for (op, trace) in operations.clone() {
             match op {
@@ -138,25 +143,25 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::AddF(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
-                            rhs.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
+                            lhs.fp() + WORD_SIZE_I32,
+                            rhs.fp() + WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::AddF(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
-                            rhs.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
+                            rhs.fp() + 2 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::AddF(
-                            dst.fp() + 3 * WORD_SIZE as i32,
-                            lhs.fp() + 3 * WORD_SIZE as i32,
-                            rhs.fp() + 3 * WORD_SIZE as i32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
+                            rhs.fp() + 3 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
@@ -169,24 +174,24 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::AddFI(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
+                            lhs.fp() + WORD_SIZE_I32,
                             slc[1],
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::AddFI(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
                             slc[2],
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::AddFI(
-                            dst.fp() + 3 * WORD_SIZE as i32,
-                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
                             slc[3],
                         ),
                         trace.clone(),
@@ -199,25 +204,25 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::AddF(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
-                            rhs.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
+                            lhs.fp() + WORD_SIZE_I32,
+                            rhs.fp() + WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::AddF(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
-                            rhs.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
+                            rhs.fp() + 2 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::AddF(
-                            dst.fp() + 3 * WORD_SIZE as i32,
-                            lhs.fp() + 3 * WORD_SIZE as i32,
-                            rhs.fp() + 3 * WORD_SIZE as i32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
+                            rhs.fp() + 3 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
@@ -231,16 +236,16 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::AddFI(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
+                            lhs.fp() + WORD_SIZE_I32,
                             slc[1],
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::AddFI(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
                             slc[2],
                         ),
                         trace.clone(),
@@ -254,24 +259,24 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::AddFI(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
+                            lhs.fp() + WORD_SIZE_I32,
                             slc[1],
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::AddFI(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
                             slc[2],
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::AddFI(
-                            dst.fp() + 3 * WORD_SIZE as i32,
-                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
                             slc[3],
                         ),
                         trace.clone(),
@@ -350,25 +355,25 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::SubF(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
-                            rhs.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
+                            lhs.fp() + WORD_SIZE_I32,
+                            rhs.fp() + WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubF(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
-                            rhs.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
+                            rhs.fp() + 2 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubF(
-                            dst.fp() + 3 * WORD_SIZE as i32,
-                            lhs.fp() + 3 * WORD_SIZE as i32,
-                            rhs.fp() + 3 * WORD_SIZE as i32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
+                            rhs.fp() + 3 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
@@ -381,24 +386,24 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::SubFI(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
+                            lhs.fp() + WORD_SIZE_I32,
                             slc[1],
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubFI(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
                             slc[2],
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubFI(
-                            dst.fp() + 3 * WORD_SIZE as i32,
-                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
                             slc[3],
                         ),
                         trace.clone(),
@@ -412,25 +417,25 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::SubFIN(
-                            dst.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
                             slc[1],
-                            rhs.fp() + WORD_SIZE as i32,
+                            rhs.fp() + WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubFIN(
-                            dst.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
                             slc[2],
-                            rhs.fp() + 2 * WORD_SIZE as i32,
+                            rhs.fp() + 2 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubFIN(
-                            dst.fp() + 3 * WORD_SIZE as i32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
                             slc[3],
-                            rhs.fp() + 3 * WORD_SIZE as i32,
+                            rhs.fp() + 3 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
@@ -444,24 +449,24 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::SubFI(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
+                            lhs.fp() + WORD_SIZE_I32,
                             slc[1],
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubFI(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
                             slc[2],
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubFI(
-                            dst.fp() + 3 * WORD_SIZE as i32,
-                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
                             slc[3],
                         ),
                         trace.clone(),
@@ -474,25 +479,25 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                     self.push(
                         AsmInstruction::SubF(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
-                            rhs.fp() + WORD_SIZE as i32,
+                            dst.fp() + WORD_SIZE_I32,
+                            lhs.fp() + WORD_SIZE_I32,
+                            rhs.fp() + WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubF(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
-                            rhs.fp() + 2 * WORD_SIZE as i32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
+                            rhs.fp() + 2 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
                     self.push(
                         AsmInstruction::SubF(
-                            dst.fp() + 3 * WORD_SIZE as i32,
-                            lhs.fp() + 3 * WORD_SIZE as i32,
-                            rhs.fp() + 3 * WORD_SIZE as i32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
+                            rhs.fp() + 3 * WORD_SIZE_I32,
                         ),
                         trace.clone(),
                     );
@@ -515,20 +520,228 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                 DslIr::MulFI(dst, lhs, rhs) => {
                     self.push(AsmInstruction::MulFI(dst.fp(), lhs.fp(), rhs), trace);
                 }
+                // This represents multiplying the two polynomials (b_0 + b_1x + b_2x^2 + b_3x^3) * (c_0 + c_1x + c_2x^2 + c_3x^3), where
+                // b_0 is at lhs.fp(), b_1 is at lhs.fp() + WORD_SIZE_I32, etc. and c_0 is at rhs.fp(), c_1 is at rhs.fp() + WORD_SIZE_I32, etc.
                 DslIr::MulE(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::MulE(dst.fp(), lhs.fp(), rhs.fp()), trace);
+                    let a0 = dst.fp();
+                    let a1 = dst.fp() + WORD_SIZE_I32;
+                    let a2 = dst.fp() + 2 * WORD_SIZE_I32;
+                    let a3 = dst.fp() + 3 * WORD_SIZE_I32;
+                    let b0 = lhs.fp();
+                    let b1 = lhs.fp() + WORD_SIZE_I32;
+                    let b2 = lhs.fp() + 2 * WORD_SIZE_I32;
+                    let b3 = lhs.fp() + 3 * WORD_SIZE_I32;
+                    let c0 = rhs.fp();
+                    let c1 = rhs.fp() + WORD_SIZE_I32;
+                    let c2 = rhs.fp() + 2 * WORD_SIZE_I32;
+                    let c3 = rhs.fp() + 3 * WORD_SIZE_I32;
+
+                    // This computes the constant term of the resulting polynomial:
+                    // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
+                    self.push(AsmInstruction::MulF(a0, b1, c3), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b2, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b3, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b0, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    // This computes the coefficient of x in the resulting polynomial:
+                    // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
+                    self.push(AsmInstruction::MulF(a1, b2, c3), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b3, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b0, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b1, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    // This computes the coefficient of x^2 in the resulting polynomial:
+                    // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
+                    self.push(AsmInstruction::MulF(a2, b3, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b0, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b1, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b2, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    // This computes the coefficient of x^3 in the resulting polynomial:
+                    // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
+                    self.push(AsmInstruction::MulF(a3, b0, c3), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b1, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b2, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b3, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
                 }
                 DslIr::MulEI(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::MulEI(dst.fp(), lhs.fp(), rhs), trace);
+                    let slc: &[F] = rhs.as_base_slice();
+
+                    let a0 = dst.fp();
+                    let a1 = dst.fp() + WORD_SIZE_I32;
+                    let a2 = dst.fp() + 2 * WORD_SIZE_I32;
+                    let a3 = dst.fp() + 3 * WORD_SIZE_I32;
+                    let b0 = lhs.fp();
+                    let b1 = lhs.fp() + WORD_SIZE_I32;
+                    let b2 = lhs.fp() + 2 * WORD_SIZE_I32;
+                    let b3 = lhs.fp() + 3 * WORD_SIZE_I32;
+                    let c0 = slc[0];
+                    let c1 = slc[1];
+                    let c2 = slc[2];
+                    let c3 = slc[3];
+
+                    // This computes the constant term of the resulting polynomial:
+                    // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
+                    self.push(AsmInstruction::MulFI(a0, b1, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b2, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b3, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b0, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    // This computes the coefficient of x in the resulting polynomial:
+                    // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
+                    self.push(AsmInstruction::MulFI(a1, b2, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b3, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b0, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b1, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    // This computes the coefficient of x^2 in the resulting polynomial:
+                    // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
+                    self.push(AsmInstruction::MulFI(a2, b3, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b0, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b1, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b2, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    // This computes the coefficient of x^3 in the resulting polynomial:
+                    // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
+                    self.push(AsmInstruction::MulFI(a3, b0, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b1, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b2, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b3, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
                 }
                 DslIr::MulEF(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::MulE(dst.fp(), lhs.fp(), rhs.fp()), trace);
+                    let a0 = dst.fp();
+                    let a1 = dst.fp() + WORD_SIZE_I32;
+                    let a2 = dst.fp() + 2 * WORD_SIZE_I32;
+                    let a3 = dst.fp() + 3 * WORD_SIZE_I32;
+                    let b0 = lhs.fp();
+                    let b1 = lhs.fp() + WORD_SIZE_I32;
+                    let b2 = lhs.fp() + 2 * WORD_SIZE_I32;
+                    let b3 = lhs.fp() + 3 * WORD_SIZE_I32;
+                    let c0 = rhs.fp();
+                    let c1 = rhs.fp() + WORD_SIZE_I32;
+                    let c2 = rhs.fp() + 2 * WORD_SIZE_I32;
+                    let c3 = rhs.fp() + 3 * WORD_SIZE_I32;
+
+                    // This computes the constant term of the resulting polynomial:
+                    // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
+                    self.push(AsmInstruction::MulF(a0, b1, c3), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b2, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b3, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b0, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    // This computes the coefficient of x in the resulting polynomial:
+                    // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
+                    self.push(AsmInstruction::MulF(a1, b2, c3), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b3, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b0, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b1, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    // This computes the coefficient of x^2 in the resulting polynomial:
+                    // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
+                    self.push(AsmInstruction::MulF(a2, b3, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b0, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b1, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b2, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    // This computes the coefficient of x^3 in the resulting polynomial:
+                    // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
+                    self.push(AsmInstruction::MulF(a3, b0, c3), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b1, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b2, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push(AsmInstruction::MulF(X1, b3, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
                 }
                 DslIr::MulEFI(dst, lhs, rhs) => {
-                    self.push(
-                        AsmInstruction::MulEI(dst.fp(), lhs.fp(), EF::from_base(rhs)),
-                        trace,
-                    );
+                    let rhs_ef = EF::from_base(rhs);
+                    let slc: &[F] = rhs_ef.as_base_slice();
+
+                    let a0 = dst.fp();
+                    let a1 = dst.fp() + WORD_SIZE_I32;
+                    let a2 = dst.fp() + 2 * WORD_SIZE_I32;
+                    let a3 = dst.fp() + 3 * WORD_SIZE_I32;
+                    let b0 = lhs.fp();
+                    let b1 = lhs.fp() + WORD_SIZE_I32;
+                    let b2 = lhs.fp() + 2 * WORD_SIZE_I32;
+                    let b3 = lhs.fp() + 3 * WORD_SIZE_I32;
+                    let c0 = slc[0];
+                    let c1 = slc[1];
+                    let c2 = slc[2];
+                    let c3 = slc[3];
+
+                    // This computes the constant term of the resulting polynomial:
+                    // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
+                    self.push(AsmInstruction::MulFI(a0, b1, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b2, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b3, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b0, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+                    // This computes the coefficient of x in the resulting polynomial:
+                    // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
+                    self.push(AsmInstruction::MulFI(a1, b2, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b3, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b0, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b1, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+                    // This computes the coefficient of x^2 in the resulting polynomial:
+                    // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
+                    self.push(AsmInstruction::MulFI(a2, b3, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b0, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b1, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b2, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+                    // This computes the coefficient of x^3 in the resulting polynomial:
+                    // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
+                    self.push(AsmInstruction::MulFI(a3, b0, c3), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b1, c2), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b2, c1), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push(AsmInstruction::MulFI(X1, b3, c0), trace.clone());
+                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
                 }
                 DslIr::IfEq(lhs, rhs, then_block, else_block) => {
                     let if_compiler = IfCompiler {
