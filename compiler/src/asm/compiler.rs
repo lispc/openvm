@@ -222,6 +222,30 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                         trace.clone(),
                     );
                 }
+                DslIr::AddEFI(dst, lhs, rhs) => {
+                    let rhs_ef = EF::from_base(rhs);
+                    let slc = rhs_ef.as_base_slice();
+                    self.push(
+                        AsmInstruction::AddFI(dst.fp(), lhs.fp(), slc[0]),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            slc[1],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            slc[2],
+                        ),
+                        trace.clone(),
+                    );
+                }
                 DslIr::AddEFFI(dst, lhs, rhs) => {
                     let slc = rhs.as_base_slice();
                     self.push(
@@ -249,30 +273,6 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                             dst.fp() + 3 * WORD_SIZE as i32,
                             lhs.fp() + 3 * WORD_SIZE as i32,
                             slc[3],
-                        ),
-                        trace.clone(),
-                    );
-                }
-                DslIr::AddEFI(dst, lhs, rhs) => {
-                    let rhs_ef = EF::from_base(rhs);
-                    let slc = rhs_ef.as_base_slice();
-                    self.push(
-                        AsmInstruction::AddFI(dst.fp(), lhs.fp(), slc[0]),
-                        trace.clone(),
-                    );
-                    self.push(
-                        AsmInstruction::AddFI(
-                            dst.fp() + WORD_SIZE as i32,
-                            lhs.fp() + WORD_SIZE as i32,
-                            slc[1],
-                        ),
-                        trace.clone(),
-                    );
-                    self.push(
-                        AsmInstruction::AddFI(
-                            dst.fp() + 2 * WORD_SIZE as i32,
-                            lhs.fp() + 2 * WORD_SIZE as i32,
-                            slc[2],
                         ),
                         trace.clone(),
                     );
@@ -343,23 +343,159 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                 DslIr::InvE(dst, src) => {
                     self.push(AsmInstruction::DivEIN(dst.fp(), EF::one(), src.fp()), trace);
                 }
-                DslIr::SubEF(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::SubE(dst.fp(), lhs.fp(), rhs.fp()), trace);
-                }
-                DslIr::SubEFI(dst, lhs, rhs) => {
+                DslIr::SubE(dst, lhs, rhs) => {
                     self.push(
-                        AsmInstruction::SubEI(dst.fp(), lhs.fp(), EF::from_base(rhs)),
-                        trace,
+                        AsmInstruction::SubF(dst.fp(), lhs.fp(), rhs.fp()),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubF(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            rhs.fp() + WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubF(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            rhs.fp() + 2 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubF(
+                            dst.fp() + 3 * WORD_SIZE as i32,
+                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            rhs.fp() + 3 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                }
+                DslIr::SubEI(dst, lhs, rhs) => {
+                    let slc = rhs.as_base_slice();
+                    self.push(
+                        AsmInstruction::SubFI(dst.fp(), lhs.fp(), slc[0]),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubFI(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            slc[1],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubFI(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            slc[2],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubFI(
+                            dst.fp() + 3 * WORD_SIZE as i32,
+                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            slc[3],
+                        ),
+                        trace.clone(),
                     );
                 }
                 DslIr::SubEIN(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::SubEIN(dst.fp(), lhs, rhs.fp()), trace);
+                    let slc = lhs.as_base_slice();
+                    self.push(
+                        AsmInstruction::SubFIN(dst.fp(), slc[0], rhs.fp()),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubFIN(
+                            dst.fp() + WORD_SIZE as i32,
+                            slc[1],
+                            rhs.fp() + WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubFIN(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            slc[2],
+                            rhs.fp() + 2 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubFIN(
+                            dst.fp() + 3 * WORD_SIZE as i32,
+                            slc[3],
+                            rhs.fp() + 3 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
                 }
-                DslIr::SubE(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::SubE(dst.fp(), lhs.fp(), rhs.fp()), trace);
+                DslIr::SubEFI(dst, lhs, rhs) => {
+                    let rhs_ef = EF::from_base(rhs);
+                    let slc = rhs_ef.as_base_slice();
+                    self.push(
+                        AsmInstruction::SubFI(dst.fp(), lhs.fp(), slc[0]),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubFI(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            slc[1],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubFI(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            slc[2],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubFI(
+                            dst.fp() + 3 * WORD_SIZE as i32,
+                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            slc[3],
+                        ),
+                        trace.clone(),
+                    );
                 }
-                DslIr::SubEI(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::SubEI(dst.fp(), lhs.fp(), rhs), trace);
+                DslIr::SubEF(dst, lhs, rhs) => {
+                    self.push(
+                        AsmInstruction::SubF(dst.fp(), lhs.fp(), rhs.fp()),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubF(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            rhs.fp() + WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubF(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            rhs.fp() + 2 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::SubF(
+                            dst.fp() + 3 * WORD_SIZE as i32,
+                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            rhs.fp() + 3 * WORD_SIZE as i32,
+                        ),
+                        trace.clone(),
+                    );
                 }
                 DslIr::NegE(dst, src) => {
                     self.push(
