@@ -1,7 +1,10 @@
 use p3_field::{ExtensionField, PrimeField32, TwoAdicField};
 use stark_vm::cpu::trace::Instruction;
 
-use crate::{conversion::{convert_program, CompilerOptions}, prelude::Builder};
+use crate::{
+    conversion::{convert_program, CompilerOptions},
+    prelude::Builder,
+};
 
 use super::{config::AsmConfig, AsmCompiler, AssemblyCode};
 
@@ -20,9 +23,13 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmBu
         let mut compiler = AsmCompiler::new();
         compiler.build(self.operations);
         let asm_code = compiler.code();
-        convert_program(asm_code, CompilerOptions {
-            compile_prints: true,
-            field_arithmetic_enabled: true,
-        })
+        convert_program(
+            asm_code,
+            CompilerOptions {
+                compile_prints: true,
+                field_arithmetic_enabled: true,
+                field_extension_enabled: false,
+            },
+        )
     }
 }
