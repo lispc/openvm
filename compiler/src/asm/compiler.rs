@@ -101,6 +101,202 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
         label
     }
 
+    fn push_mul_instructions(
+        &mut self,
+        a: [i32; 4],
+        b: [i32; 4],
+        c: [i32; 4],
+        trace: Option<Backtrace>,
+    ) {
+        let beta_f = F::from_canonical_usize(BETA);
+
+        let a0 = a[0];
+        let a1 = a[1];
+        let a2 = a[2];
+        let a3 = a[3];
+        let b0 = b[0];
+        let b1 = b[1];
+        let b2 = b[2];
+        let b3 = b[3];
+        let c0 = c[0];
+        let c1 = c[1];
+        let c2 = c[2];
+        let c3 = c[3];
+
+        // This computes the constant term of the resulting polynomial:
+        // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
+        self.push(AsmInstruction::MulF(a0, b1, c3), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b2, c2), trace.clone());
+        self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b3, c1), trace.clone());
+        self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b0, c0), trace.clone());
+        self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+        // This computes the coefficient of x in the resulting polynomial:
+        // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
+        self.push(AsmInstruction::MulF(a1, b2, c3), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b3, c2), trace.clone());
+        self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b0, c1), trace.clone());
+        self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b1, c0), trace.clone());
+        self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+        // This computes the coefficient of x^2 in the resulting polynomial:
+        // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
+        self.push(AsmInstruction::MulF(a2, b3, c3), trace.clone());
+        self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b0, c2), trace.clone());
+        self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b1, c1), trace.clone());
+        self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b2, c0), trace.clone());
+        self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+        // This computes the coefficient of x^3 in the resulting polynomial:
+        // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
+        self.push(AsmInstruction::MulF(a3, b0, c3), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b1, c2), trace.clone());
+        self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b2, c1), trace.clone());
+        self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X1, b3, c0), trace.clone());
+        self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+    }
+
+    fn push_mul_instructions_immediate(
+        &mut self,
+        a: [i32; 4],
+        b: [i32; 4],
+        c: [F; 4],
+        trace: Option<Backtrace>,
+    ) {
+        let beta_f = F::from_canonical_usize(BETA);
+
+        let a0 = a[0];
+        let a1 = a[1];
+        let a2 = a[2];
+        let a3 = a[3];
+        let b0 = b[0];
+        let b1 = b[1];
+        let b2 = b[2];
+        let b3 = b[3];
+        let c0 = c[0];
+        let c1 = c[1];
+        let c2 = c[2];
+        let c3 = c[3];
+
+        // This computes the constant term of the resulting polynomial:
+        // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
+        self.push(AsmInstruction::MulFI(a0, b1, c3), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b2, c2), trace.clone());
+        self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b3, c1), trace.clone());
+        self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b0, c0), trace.clone());
+        self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
+        // This computes the coefficient of x in the resulting polynomial:
+        // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
+        self.push(AsmInstruction::MulFI(a1, b2, c3), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b3, c2), trace.clone());
+        self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b0, c1), trace.clone());
+        self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b1, c0), trace.clone());
+        self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
+        // This computes the coefficient of x^2 in the resulting polynomial:
+        // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
+        self.push(AsmInstruction::MulFI(a2, b3, c3), trace.clone());
+        self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b0, c2), trace.clone());
+        self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b1, c1), trace.clone());
+        self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b2, c0), trace.clone());
+        self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
+        // This computes the coefficient of x^3 in the resulting polynomial:
+        // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
+        self.push(AsmInstruction::MulFI(a3, b0, c3), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b1, c2), trace.clone());
+        self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b2, c1), trace.clone());
+        self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, b3, c0), trace.clone());
+        self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+    }
+
+    fn push_inv_instructions(
+        &mut self,
+        dst: Ext<F, EF>,
+        src: Ext<F, EF>,
+        trace: Option<Backtrace>,
+    ) {
+        let beta_f = F::from_canonical_usize(BETA);
+        const WORD_SIZE_I32: i32 = WORD_SIZE as i32;
+
+        let a0 = dst.fp();
+        let a1 = dst.fp() + WORD_SIZE_I32;
+        let a2 = dst.fp() + 2 * WORD_SIZE_I32;
+        let a3 = dst.fp() + 3 * WORD_SIZE_I32;
+        let b0 = src.fp();
+        let b1 = src.fp() + WORD_SIZE_I32;
+        let b2 = src.fp() + 2 * WORD_SIZE_I32;
+        let b3 = src.fp() + 3 * WORD_SIZE_I32;
+
+        // First we compute the term b_0^2 - 11 * (2b_1 * b_3 - b_2^2), call this n
+        self.push(AsmInstruction::MulF(X1, b1, b3), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, X1, F::two()), trace.clone());
+        self.push(AsmInstruction::MulF(X2, b2, b2), trace.clone());
+        self.push(AsmInstruction::SubF(X1, X1, X2), trace.clone());
+        self.push(AsmInstruction::MulFI(X1, X1, beta_f), trace.clone());
+        self.push(AsmInstruction::MulF(X2, b0, b0), trace.clone());
+        self.push(AsmInstruction::SubF(X1, X2, X1), trace.clone());
+
+        // Next we compute the term 2 * b_0 * b_2 - b_1^2 - 11 * b_3^2, call this m
+        self.push(AsmInstruction::MulF(X2, b0, b2), trace.clone());
+        self.push(AsmInstruction::MulFI(X2, X2, F::two()), trace.clone());
+        self.push(AsmInstruction::MulF(X3, b1, b1), trace.clone());
+        self.push(AsmInstruction::SubF(X2, X2, X3), trace.clone());
+        self.push(AsmInstruction::MulF(X3, b3, b3), trace.clone());
+        self.push(AsmInstruction::MulFI(X3, X3, beta_f), trace.clone());
+        self.push(AsmInstruction::SubF(X2, X2, X3), trace.clone());
+
+        // Now, we compute the term c = n^2 - 11*m^2, and then take the inverse, call this inv_c
+        self.push(AsmInstruction::MulF(X3, X1, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X4, X2, X2), trace.clone());
+        self.push(AsmInstruction::MulFI(X4, X4, beta_f), trace.clone());
+        self.push(AsmInstruction::SubF(X3, X3, X4), trace.clone());
+        self.push(AsmInstruction::DivEIN(X3, EF::one(), X3), trace.clone());
+
+        // Now, we multiply n and m by inv_c
+        self.push(AsmInstruction::MulF(X1, X1, X3), trace.clone());
+        self.push(AsmInstruction::MulF(X2, X2, X3), trace.clone());
+
+        // We compute the constant term of the result: b_0 * n - 11 * b_2 * m
+        self.push(AsmInstruction::MulF(a0, b0, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X3, b2, X2), trace.clone());
+        self.push(AsmInstruction::MulFI(X3, X3, beta_f), trace.clone());
+        self.push(AsmInstruction::SubF(a0, a0, X3), trace.clone());
+
+        // We compute the coefficient of x: -b_1 * n + 11 * b_3 * m
+        self.push(AsmInstruction::MulF(a1, b1, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X3, b3, X2), trace.clone());
+        self.push(AsmInstruction::MulFI(X3, X3, beta_f), trace.clone());
+        self.push(AsmInstruction::SubF(a1, X3, a1), trace.clone());
+
+        // Here, we compute the coefficient of x^2: b_2 * n - b_0 * m
+        self.push(AsmInstruction::MulF(a2, b2, X1), trace.clone());
+        self.push(AsmInstruction::MulF(X3, b0, X2), trace.clone());
+        self.push(AsmInstruction::SubF(a2, a2, X3), trace.clone());
+
+        // Finally, we compute the coefficient of x^3: b_1 * m - b_3 * n
+        self.push(AsmInstruction::MulF(a3, b1, X2), trace.clone());
+        self.push(AsmInstruction::MulF(X3, b3, X1), trace.clone());
+        self.push(AsmInstruction::SubF(a3, a3, X3), trace.clone());
+    }
+
     /// Builds the operations into assembly instructions.
     pub fn build(&mut self, operations: TracedVec<DslIr<AsmConfig<F, EF>>>) {
         // Set the heap pointer value according to stack size.
@@ -110,7 +306,6 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
         }
 
         const WORD_SIZE_I32: i32 = WORD_SIZE as i32;
-        let beta_f = F::from_canonical_usize(BETA);
 
         // For each operation, generate assembly instructions.
         for (op, trace) in operations.clone() {
@@ -321,8 +516,35 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                 DslIr::InvF(dst, src) => {
                     self.push(AsmInstruction::DivFIN(dst.fp(), F::one(), src.fp()), trace);
                 }
-                DslIr::DivEF(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::DivE(dst.fp(), lhs.fp(), rhs.fp()), trace);
+                DslIr::DivE(dst, lhs, rhs) => {
+                    self.push_inv_instructions(dst, rhs, trace.clone());
+                    self.push_mul_instructions(
+                        [
+                            dst.fp(),
+                            dst.fp() + WORD_SIZE_I32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        [
+                            lhs.fp(),
+                            lhs.fp() + WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        [
+                            dst.fp(),
+                            dst.fp() + WORD_SIZE_I32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        trace.clone(),
+                    );
+                }
+                DslIr::DivEI(dst, lhs, rhs) => {
+                    self.push(AsmInstruction::DivEI(dst.fp(), lhs.fp(), rhs), trace);
+                }
+                DslIr::DivEIN(dst, lhs, rhs) => {
+                    self.push(AsmInstruction::DivEIN(dst.fp(), lhs, rhs.fp()), trace);
                 }
                 DslIr::DivEFI(dst, lhs, rhs) => {
                     self.push(
@@ -330,23 +552,17 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                         trace,
                     );
                 }
-                DslIr::DivEIN(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::DivEIN(dst.fp(), lhs, rhs.fp()), trace);
-                }
                 DslIr::DivEFIN(dst, lhs, rhs) => {
                     self.push(
                         AsmInstruction::DivEIN(dst.fp(), EF::from_base(lhs), rhs.fp()),
                         trace,
                     );
                 }
-                DslIr::DivE(dst, lhs, rhs) => {
+                DslIr::DivEF(dst, lhs, rhs) => {
                     self.push(AsmInstruction::DivE(dst.fp(), lhs.fp(), rhs.fp()), trace);
                 }
-                DslIr::DivEI(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::DivEI(dst.fp(), lhs.fp(), rhs), trace);
-                }
                 DslIr::InvE(dst, src) => {
-                    self.push(AsmInstruction::DivEIN(dst.fp(), EF::one(), src.fp()), trace);
+                    self.push_inv_instructions(dst, src, trace);
                 }
                 DslIr::SubE(dst, lhs, rhs) => {
                     self.push(
@@ -523,225 +739,91 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                 // This represents multiplying the two polynomials (b_0 + b_1x + b_2x^2 + b_3x^3) * (c_0 + c_1x + c_2x^2 + c_3x^3), where
                 // b_0 is at lhs.fp(), b_1 is at lhs.fp() + WORD_SIZE_I32, etc. and c_0 is at rhs.fp(), c_1 is at rhs.fp() + WORD_SIZE_I32, etc.
                 DslIr::MulE(dst, lhs, rhs) => {
-                    let a0 = dst.fp();
-                    let a1 = dst.fp() + WORD_SIZE_I32;
-                    let a2 = dst.fp() + 2 * WORD_SIZE_I32;
-                    let a3 = dst.fp() + 3 * WORD_SIZE_I32;
-                    let b0 = lhs.fp();
-                    let b1 = lhs.fp() + WORD_SIZE_I32;
-                    let b2 = lhs.fp() + 2 * WORD_SIZE_I32;
-                    let b3 = lhs.fp() + 3 * WORD_SIZE_I32;
-                    let c0 = rhs.fp();
-                    let c1 = rhs.fp() + WORD_SIZE_I32;
-                    let c2 = rhs.fp() + 2 * WORD_SIZE_I32;
-                    let c3 = rhs.fp() + 3 * WORD_SIZE_I32;
-
-                    // This computes the constant term of the resulting polynomial:
-                    // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
-                    self.push(AsmInstruction::MulF(a0, b1, c3), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b2, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b3, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b0, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    // This computes the coefficient of x in the resulting polynomial:
-                    // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
-                    self.push(AsmInstruction::MulF(a1, b2, c3), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b3, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b0, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b1, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    // This computes the coefficient of x^2 in the resulting polynomial:
-                    // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
-                    self.push(AsmInstruction::MulF(a2, b3, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b0, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b1, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b2, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    // This computes the coefficient of x^3 in the resulting polynomial:
-                    // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
-                    self.push(AsmInstruction::MulF(a3, b0, c3), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b1, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b2, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b3, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push_mul_instructions(
+                        [
+                            dst.fp(),
+                            dst.fp() + WORD_SIZE_I32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        [
+                            lhs.fp(),
+                            lhs.fp() + WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        [
+                            rhs.fp(),
+                            rhs.fp() + WORD_SIZE_I32,
+                            rhs.fp() + 2 * WORD_SIZE_I32,
+                            rhs.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        trace,
+                    );
                 }
                 DslIr::MulEI(dst, lhs, rhs) => {
                     let slc: &[F] = rhs.as_base_slice();
 
-                    let a0 = dst.fp();
-                    let a1 = dst.fp() + WORD_SIZE_I32;
-                    let a2 = dst.fp() + 2 * WORD_SIZE_I32;
-                    let a3 = dst.fp() + 3 * WORD_SIZE_I32;
-                    let b0 = lhs.fp();
-                    let b1 = lhs.fp() + WORD_SIZE_I32;
-                    let b2 = lhs.fp() + 2 * WORD_SIZE_I32;
-                    let b3 = lhs.fp() + 3 * WORD_SIZE_I32;
-                    let c0 = slc[0];
-                    let c1 = slc[1];
-                    let c2 = slc[2];
-                    let c3 = slc[3];
-
-                    // This computes the constant term of the resulting polynomial:
-                    // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
-                    self.push(AsmInstruction::MulFI(a0, b1, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b2, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b3, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b0, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    // This computes the coefficient of x in the resulting polynomial:
-                    // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
-                    self.push(AsmInstruction::MulFI(a1, b2, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b3, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b0, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b1, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    // This computes the coefficient of x^2 in the resulting polynomial:
-                    // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
-                    self.push(AsmInstruction::MulFI(a2, b3, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b0, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b1, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b2, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    // This computes the coefficient of x^3 in the resulting polynomial:
-                    // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
-                    self.push(AsmInstruction::MulFI(a3, b0, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b1, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b2, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b3, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push_mul_instructions_immediate(
+                        [
+                            dst.fp(),
+                            dst.fp() + WORD_SIZE_I32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        [
+                            lhs.fp(),
+                            lhs.fp() + WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        slc.try_into().unwrap(),
+                        trace,
+                    );
                 }
                 DslIr::MulEF(dst, lhs, rhs) => {
-                    let a0 = dst.fp();
-                    let a1 = dst.fp() + WORD_SIZE_I32;
-                    let a2 = dst.fp() + 2 * WORD_SIZE_I32;
-                    let a3 = dst.fp() + 3 * WORD_SIZE_I32;
-                    let b0 = lhs.fp();
-                    let b1 = lhs.fp() + WORD_SIZE_I32;
-                    let b2 = lhs.fp() + 2 * WORD_SIZE_I32;
-                    let b3 = lhs.fp() + 3 * WORD_SIZE_I32;
-                    let c0 = rhs.fp();
-                    let c1 = rhs.fp() + WORD_SIZE_I32;
-                    let c2 = rhs.fp() + 2 * WORD_SIZE_I32;
-                    let c3 = rhs.fp() + 3 * WORD_SIZE_I32;
-
-                    // This computes the constant term of the resulting polynomial:
-                    // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
-                    self.push(AsmInstruction::MulF(a0, b1, c3), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b2, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b3, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b0, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    // This computes the coefficient of x in the resulting polynomial:
-                    // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
-                    self.push(AsmInstruction::MulF(a1, b2, c3), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b3, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b0, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b1, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    // This computes the coefficient of x^2 in the resulting polynomial:
-                    // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
-                    self.push(AsmInstruction::MulF(a2, b3, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b0, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b1, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b2, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    // This computes the coefficient of x^3 in the resulting polynomial:
-                    // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
-                    self.push(AsmInstruction::MulF(a3, b0, c3), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b1, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b2, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
-                    self.push(AsmInstruction::MulF(X1, b3, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push_mul_instructions(
+                        [
+                            dst.fp(),
+                            dst.fp() + WORD_SIZE_I32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        [
+                            lhs.fp(),
+                            lhs.fp() + WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        [
+                            rhs.fp(),
+                            rhs.fp() + WORD_SIZE_I32,
+                            rhs.fp() + 2 * WORD_SIZE_I32,
+                            rhs.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        trace,
+                    );
                 }
                 DslIr::MulEFI(dst, lhs, rhs) => {
                     let rhs_ef = EF::from_base(rhs);
                     let slc: &[F] = rhs_ef.as_base_slice();
 
-                    let a0 = dst.fp();
-                    let a1 = dst.fp() + WORD_SIZE_I32;
-                    let a2 = dst.fp() + 2 * WORD_SIZE_I32;
-                    let a3 = dst.fp() + 3 * WORD_SIZE_I32;
-                    let b0 = lhs.fp();
-                    let b1 = lhs.fp() + WORD_SIZE_I32;
-                    let b2 = lhs.fp() + 2 * WORD_SIZE_I32;
-                    let b3 = lhs.fp() + 3 * WORD_SIZE_I32;
-                    let c0 = slc[0];
-                    let c1 = slc[1];
-                    let c2 = slc[2];
-                    let c3 = slc[3];
-
-                    // This computes the constant term of the resulting polynomial:
-                    // a_0 = b_0 * c_0 + BETA * (b_1 * c_3 + b_2 * c_2 + b_3 * c_1)
-                    self.push(AsmInstruction::MulFI(a0, b1, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b2, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b3, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(a0, a0, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b0, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a0, a0, X1), trace.clone());
-                    // This computes the coefficient of x in the resulting polynomial:
-                    // b_0 * c_1 + b_1 * c_0 + BETA * (b_2 * c_3 + b_3 * c_2)
-                    self.push(AsmInstruction::MulFI(a1, b2, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b3, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(a1, a1, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b0, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b1, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a1, a1, X1), trace.clone());
-                    // This computes the coefficient of x^2 in the resulting polynomial:
-                    // b_0 * c_2 + b_1 * c_1 + b_2 * c_0 + BETA * b_3 * c_3
-                    self.push(AsmInstruction::MulFI(a2, b3, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(a2, a2, beta_f), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b0, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b1, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b2, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a2, a2, X1), trace.clone());
-                    // This computes the coefficient of x^3 in the resulting polynomial:
-                    // b_0 * c_3 + b_1 * c_2 + b_2 * c_1 + b_3 * c_0
-                    self.push(AsmInstruction::MulFI(a3, b0, c3), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b1, c2), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b2, c1), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
-                    self.push(AsmInstruction::MulFI(X1, b3, c0), trace.clone());
-                    self.push(AsmInstruction::AddF(a3, a3, X1), trace.clone());
+                    self.push_mul_instructions_immediate(
+                        [
+                            dst.fp(),
+                            dst.fp() + WORD_SIZE_I32,
+                            dst.fp() + 2 * WORD_SIZE_I32,
+                            dst.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        [
+                            lhs.fp(),
+                            lhs.fp() + WORD_SIZE_I32,
+                            lhs.fp() + 2 * WORD_SIZE_I32,
+                            lhs.fp() + 3 * WORD_SIZE_I32,
+                        ],
+                        slc.try_into().unwrap(),
+                        trace,
+                    );
                 }
                 DslIr::IfEq(lhs, rhs, then_block, else_block) => {
                     let if_compiler = IfCompiler {
