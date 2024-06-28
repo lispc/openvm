@@ -162,7 +162,35 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                 }
                 DslIr::AddEI(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::AddEI(dst.fp(), lhs.fp(), rhs), trace);
+                    let slc = rhs.as_base_slice();
+                    self.push(
+                        AsmInstruction::AddFI(dst.fp(), lhs.fp(), slc[0]),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            slc[1],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            slc[2],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + 3 * WORD_SIZE as i32,
+                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            slc[3],
+                        ),
+                        trace.clone(),
+                    );
                 }
                 DslIr::AddEF(dst, lhs, rhs) => {
                     self.push(
@@ -195,12 +223,58 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmCo
                     );
                 }
                 DslIr::AddEFFI(dst, lhs, rhs) => {
-                    self.push(AsmInstruction::AddEI(dst.fp(), lhs.fp(), rhs), trace);
+                    let slc = rhs.as_base_slice();
+                    self.push(
+                        AsmInstruction::AddFI(dst.fp(), lhs.fp(), slc[0]),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            slc[1],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            slc[2],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + 3 * WORD_SIZE as i32,
+                            lhs.fp() + 3 * WORD_SIZE as i32,
+                            slc[3],
+                        ),
+                        trace.clone(),
+                    );
                 }
                 DslIr::AddEFI(dst, lhs, rhs) => {
+                    let rhs_ef = EF::from_base(rhs);
+                    let slc = rhs_ef.as_base_slice();
                     self.push(
-                        AsmInstruction::AddEI(dst.fp(), lhs.fp(), EF::from_base(rhs)),
-                        trace,
+                        AsmInstruction::AddFI(dst.fp(), lhs.fp(), slc[0]),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + WORD_SIZE as i32,
+                            lhs.fp() + WORD_SIZE as i32,
+                            slc[1],
+                        ),
+                        trace.clone(),
+                    );
+                    self.push(
+                        AsmInstruction::AddFI(
+                            dst.fp() + 2 * WORD_SIZE as i32,
+                            lhs.fp() + 2 * WORD_SIZE as i32,
+                            slc[2],
+                        ),
+                        trace.clone(),
                     );
                 }
                 DslIr::SubV(dst, lhs, rhs) => {
