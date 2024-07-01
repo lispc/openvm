@@ -19,11 +19,11 @@ impl<F: PrimeField32 + TwoAdicField, EF: ExtensionField<F> + TwoAdicField> AsmBu
         compiler.code()
     }
 
-    pub fn compile_isa(self) -> Vec<Instruction<F>> {
+    pub fn compile_isa<const WORD_SIZE: usize>(self) -> Vec<Instruction<F>> {
         let mut compiler = AsmCompiler::new();
         compiler.build(self.operations);
         let asm_code = compiler.code();
-        convert_program(
+        convert_program::<WORD_SIZE, F, EF>(
             asm_code,
             CompilerOptions {
                 compile_prints: true,

@@ -49,7 +49,7 @@ fn main() {
     builder.print_f(a);
     builder.halt();
 
-    let program = builder.compile_isa();
+    let program = builder.compile_isa::<WORD_SIZE>();
     display_program(&program);
     execute_program::<WORD_SIZE, _>(program);
 

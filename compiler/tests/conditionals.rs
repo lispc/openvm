@@ -54,7 +54,7 @@ fn test_compiler_conditionals() {
 
     builder.halt();
 
-    let program = builder.compile_isa();
+    let program = builder.compile_isa::<WORD_SIZE>();
     display_program(&program);
     execute_program::<WORD_SIZE, _>(program);
 
@@ -94,7 +94,7 @@ fn test_compiler_conditionals_v2() {
 
     builder.halt();
 
-    let program = builder.compile_isa();
+    let program = builder.compile_isa::<WORD_SIZE>();
     display_program(&program);
     execute_program::<WORD_SIZE, _>(program);
 
