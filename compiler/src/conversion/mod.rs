@@ -1,4 +1,4 @@
-use field_extension_conversion::convert_field_extension_arithmetic_instruction;
+use field_extension_conversion::convert_field_extension_with_base;
 use p3_field::{ExtensionField, PrimeField64};
 
 use crate::asm::{AsmInstruction, AssemblyCode};
@@ -199,6 +199,25 @@ fn convert_field_arithmetic_instruction<F: PrimeField64, EF: ExtensionField<F>>(
         ),
     }
 }
+
+// To be added with field extension arithmetic chip merged:
+
+// fn convert_field_extension_arithmetic_instruction<
+//     const WORD_SIZE: usize,
+//     F: PrimeField64,
+//     EF: ExtensionField<F>,
+// >(
+//     instruction: AsmInstruction<F, EF>,
+//     utility_registers: [F; 4],
+// ) -> Vec<Instruction<F>> {
+//     match instruction {
+//         _ => panic!(
+//             "Illegal argument to convert_field_extension_arithmetic_instruction: {:?}",
+//             instruction
+//         ),
+//     }
+//     convert_field_extension_with_base::<WORD_SIZE, F, EF>(instruction, utility_registers)
+// }
 
 fn convert_print_instruction<F: PrimeField64, EF: ExtensionField<F>>(
     instruction: AsmInstruction<F, EF>,
@@ -470,13 +489,16 @@ fn convert_instruction<const WORD_SIZE: usize, F: PrimeField64, EF: ExtensionFie
         | AsmInstruction::DivE(..)
         | AsmInstruction::DivEI(..)
         | AsmInstruction::DivEIN(..) => {
-            if options.field_extension_enabled {
-                convert_field_extension_arithmetic_instruction::<WORD_SIZE, F, EF>(
+            if options.field_arithmetic_enabled {
+                convert_field_extension_with_base::<WORD_SIZE, F, EF>(
                     instruction,
                     utility_registers,
                 )
             } else {
-                panic!("Field extension is disabled")
+                panic!(
+                    "Unsupported instruction {:?}, field extension arithmetic is disabled",
+                    instruction
+                )
             }
         }
         AsmInstruction::PrintV(..) | AsmInstruction::PrintF(..) | AsmInstruction::PrintE(..) => {

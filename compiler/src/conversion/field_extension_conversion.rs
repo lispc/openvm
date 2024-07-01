@@ -438,7 +438,7 @@ fn field_extension_inv_immediate<F: PrimeField64, EF: ExtensionField<F>>(x: EF) 
     [a0, a1, a2, a3]
 }
 
-pub fn convert_field_extension_arithmetic_instruction<
+pub fn convert_field_extension_with_base<
     const WORD_SIZE: usize,
     F: PrimeField64,
     EF: ExtensionField<F>,
@@ -774,7 +774,7 @@ pub fn convert_field_extension_arithmetic_instruction<
             inv_instr.into_iter().chain(mul_instr).collect()
         }
         _ => panic!(
-            "Illegal argument to convert_field_extension_arithmetic_instruction: {:?}",
+            "Illegal argument to convert_field_extension_with_base: {:?}",
             instruction
         ),
     }
