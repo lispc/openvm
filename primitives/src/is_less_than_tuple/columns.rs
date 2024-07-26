@@ -41,6 +41,24 @@ pub struct IsLessThanTupleAuxCols<T> {
     pub less_than_cumulative: Vec<T>,
 }
 
+impl<T> IsLessThanTupleAuxCols<T> {
+    pub fn flatten(self) -> Vec<T> {
+        let mut flattened = vec![];
+
+        flattened.extend(self.less_than);
+
+        for aux in self.less_than_aux.into_iter() {
+            flattened.extend(aux.flatten());
+        }
+
+        flattened.extend(self.is_equal_vec_aux.prods);
+        flattened.extend(self.is_equal_vec_aux.invs);
+        flattened.extend(self.less_than_cumulative);
+
+        flattened
+    }
+}
+
 impl<T: Clone> IsLessThanTupleAuxCols<T> {
     pub fn from_slice(slc: &[T], lt_chip: &IsLessThanTupleAir) -> Self {
         let tuple_len = lt_chip.tuple_len();
@@ -69,23 +87,6 @@ impl<T: Clone> IsLessThanTupleAuxCols<T> {
             is_equal_vec_aux,
             less_than_cumulative,
         }
-    }
-
-    pub fn flatten(&self) -> Vec<T> {
-        let mut flattened = vec![];
-
-        flattened.extend_from_slice(&self.less_than);
-
-        for i in 0..self.less_than_aux.len() {
-            flattened.extend_from_slice(&self.less_than_aux[i].flatten());
-        }
-
-        flattened.extend_from_slice(&self.is_equal_vec_aux.prods);
-        flattened.extend_from_slice(&self.is_equal_vec_aux.invs);
-
-        flattened.extend_from_slice(&self.less_than_cumulative);
-
-        flattened
     }
 
     pub fn width(lt_air: &IsLessThanTupleAir) -> usize {
@@ -118,7 +119,7 @@ impl<T: Clone> IsLessThanTupleCols<T> {
         Self { io, aux }
     }
 
-    pub fn flatten(&self) -> Vec<T> {
+    pub fn flatten(self) -> Vec<T> {
         let mut flattened = self.io.flatten();
         flattened.extend(self.aux.flatten());
         flattened

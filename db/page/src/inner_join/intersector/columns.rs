@@ -64,11 +64,11 @@ impl<T: Clone> IntersectorAuxCols<T> {
         }
     }
 
-    pub fn flatten(&self) -> Vec<T> {
+    pub fn flatten(self) -> Vec<T> {
         self.lt_aux
             .flatten()
             .into_iter()
-            .chain(iter::once(self.lt_out.clone()))
+            .chain(iter::once(self.lt_out))
             .collect()
     }
 
@@ -96,7 +96,7 @@ impl<T: Clone> IntersectorCols<T> {
         }
     }
 
-    pub fn flatten(&self) -> Vec<T> {
+    pub fn flatten(self) -> Vec<T> {
         self.io
             .flatten()
             .into_iter()

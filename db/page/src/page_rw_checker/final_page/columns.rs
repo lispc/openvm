@@ -60,11 +60,11 @@ impl<T: Clone> IndexedPageWriteAuxCols<T> {
         }
     }
 
-    pub fn flatten(&self) -> Vec<T> {
+    pub fn flatten(self) -> Vec<T> {
         self.final_page_aux_cols
             .flatten()
             .into_iter()
-            .chain(iter::once(self.rcv_mult.clone()))
+            .chain(iter::once(self.rcv_mult))
             .collect()
     }
 }

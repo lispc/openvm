@@ -35,18 +35,20 @@ pub struct IsLessThanAuxCols<T> {
     pub lower_decomp: Vec<T>,
 }
 
+impl<T> IsLessThanAuxCols<T> {
+    pub fn flatten(self) -> Vec<T> {
+        let mut flattened = vec![self.lower];
+        flattened.extend(self.lower_decomp);
+        flattened
+    }
+}
+
 impl<T: Clone> IsLessThanAuxCols<T> {
     pub fn from_slice(slc: &[T]) -> Self {
         Self {
             lower: slc[0].clone(),
             lower_decomp: slc[1..].to_vec(),
         }
-    }
-
-    pub fn flatten(&self) -> Vec<T> {
-        let mut flattened = vec![self.lower.clone()];
-        flattened.extend(self.lower_decomp.iter().cloned());
-        flattened
     }
 
     pub fn width(lt_air: &IsLessThanAir) -> usize {
@@ -67,7 +69,7 @@ impl<T: Clone> IsLessThanCols<T> {
         Self { io, aux }
     }
 
-    pub fn flatten(&self) -> Vec<T> {
+    pub fn flatten(self) -> Vec<T> {
         let mut flattened = self.io.flatten();
         flattened.extend(self.aux.flatten());
         flattened

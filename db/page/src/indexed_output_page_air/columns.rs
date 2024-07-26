@@ -64,11 +64,11 @@ impl<T: Clone> IndexedOutputPageAuxCols<T> {
         }
     }
 
-    pub fn flatten(&self) -> Vec<T> {
+    pub fn flatten(self) -> Vec<T> {
         self.lt_cols
             .flatten()
             .into_iter()
-            .chain(iter::once(self.lt_out.clone()))
+            .chain(iter::once(self.lt_out))
             .collect()
     }
 }

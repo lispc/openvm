@@ -130,7 +130,7 @@ impl<const WORD_SIZE: usize, T: Clone> CpuAuxCols<WORD_SIZE, T> {
         }
     }
 
-    pub fn flatten(&self, options: CpuOptions) -> Vec<T> {
+    pub fn flatten(self, options: CpuOptions) -> Vec<T> {
         let mut flattened = vec![];
         for opcode in options.enabled_instructions() {
             flattened.push(self.operation_flags.get(&opcode).unwrap().clone());
@@ -164,7 +164,7 @@ impl<const WORD_SIZE: usize, T: Clone> CpuCols<WORD_SIZE, T> {
         Self { io, aux }
     }
 
-    pub fn flatten(&self, options: CpuOptions) -> Vec<T> {
+    pub fn flatten(self, options: CpuOptions) -> Vec<T> {
         let mut flattened = self.io.flatten();
         flattened.extend(self.aux.flatten(options));
         flattened

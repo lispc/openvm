@@ -35,28 +35,7 @@ pub struct OfflineCheckerCols<T> {
     pub lt_aux: IsLessThanTupleAuxCols<T>,
 }
 
-impl<T> OfflineCheckerCols<T>
-where
-    T: Clone,
-{
-    pub fn flatten(&self) -> Vec<T> {
-        let mut flattened = vec![self.clk.clone()];
-        flattened.extend(self.idx.clone());
-        flattened.extend(self.data.clone());
-        flattened.extend(vec![
-            self.op_type.clone(),
-            self.same_idx.clone(),
-            self.lt_bit.clone(),
-            self.is_valid.clone(),
-            self.is_receive.clone(),
-        ]);
-
-        flattened.extend(self.is_equal_idx_aux.flatten());
-        flattened.extend(self.lt_aux.flatten());
-
-        flattened
-    }
-
+impl<T: Clone> OfflineCheckerCols<T> {
     pub fn from_slice(slc: &[T], oc: &OfflineChecker) -> Self {
         assert!(slc.len() == oc.air_width());
         let idx_len = oc.idx_len;
@@ -80,5 +59,25 @@ where
                 &oc.lt_tuple_air,
             ),
         }
+    }
+}
+
+impl<T> OfflineCheckerCols<T> {
+    pub fn flatten(self) -> Vec<T> {
+        let mut flattened = vec![self.clk];
+        flattened.extend(self.idx);
+        flattened.extend(self.data);
+        flattened.extend(vec![
+            self.op_type,
+            self.same_idx,
+            self.lt_bit,
+            self.is_valid,
+            self.is_receive,
+        ]);
+
+        flattened.extend(self.is_equal_idx_aux.flatten());
+        flattened.extend(self.lt_aux.flatten());
+
+        flattened
     }
 }

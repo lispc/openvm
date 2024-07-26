@@ -20,27 +20,7 @@ pub struct PageOfflineCheckerCols<T> {
     pub is_delete: T,
 }
 
-impl<T> PageOfflineCheckerCols<T>
-where
-    T: Clone,
-{
-    pub fn flatten(&self) -> Vec<T> {
-        let mut flattened = self.offline_checker_cols.flatten();
-
-        flattened.extend(vec![
-            self.is_initial.clone(),
-            self.is_final_write.clone(),
-            self.is_final_delete.clone(),
-        ]);
-        flattened.extend(vec![
-            self.is_read.clone(),
-            self.is_write.clone(),
-            self.is_delete.clone(),
-        ]);
-
-        flattened
-    }
-
+impl<T: Clone> PageOfflineCheckerCols<T> {
     pub fn from_slice(slc: &[T], oc: &PageOfflineChecker) -> Self {
         assert!(slc.len() == oc.air_width());
 
@@ -61,5 +41,20 @@ where
 
     pub fn width(oc: &PageOfflineChecker) -> usize {
         oc.offline_checker.air_width() + 6
+    }
+}
+
+impl<T> PageOfflineCheckerCols<T> {
+    pub fn flatten(self) -> Vec<T> {
+        let mut flattened = self.offline_checker_cols.flatten();
+
+        flattened.extend(vec![
+            self.is_initial,
+            self.is_final_write,
+            self.is_final_delete,
+        ]);
+        flattened.extend(vec![self.is_read, self.is_write, self.is_delete]);
+
+        flattened
     }
 }
