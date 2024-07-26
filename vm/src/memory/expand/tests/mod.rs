@@ -5,14 +5,13 @@ use p3_field::{AbstractField, PrimeField64};
 use p3_matrix::dense::RowMajorMatrix;
 use rand::RngCore;
 
-use afs_stark_backend::interaction::InteractionType;
 use afs_test_utils::config::baby_bear_blake3::run_simple_test_no_pis;
 use afs_test_utils::interaction::dummy_interaction_air::DummyInteractionAir;
 use afs_test_utils::utils::create_seeded_rng;
 
+use crate::memory::expand::{EXPAND_BUS, ExpandChip};
 use crate::memory::expand::columns::ExpandCols;
 use crate::memory::expand::tests::util::HashTestChip;
-use crate::memory::expand::{ExpandChip, EXPAND_BUS};
 use crate::memory::tree::trees_from_full_memory;
 
 mod util;
@@ -80,50 +79,30 @@ fn test<const CHUNK: usize>(
 
     assert_eq!(final_trees, final_trees_check);
 
-    let dummy_interaction_air = DummyInteractionAir::new(4 + CHUNK, true, EXPAND_BUS);
+    let dummy_interaction_air = DummyInteractionAir::new(4 + CHUNK, false, EXPAND_BUS);
     let mut dummy_interaction_trace_rows = vec![];
-    let mut interaction = |interaction_type: InteractionType,
-                           is_compress: bool,
+    let mut interaction = |receive: bool,
+                           is_final: bool,
                            address_space: BabyBear,
                            height: usize,
                            node_label: usize,
                            hash: [BabyBear; CHUNK]| {
-        let expand_direction = if is_compress {
+        dummy_interaction_trace_rows.push(if receive {
             BabyBear::neg_one()
         } else {
             BabyBear::one()
-        };
-        dummy_interaction_trace_rows.push(match interaction_type {
-            InteractionType::Send => expand_direction,
-            InteractionType::Receive => -expand_direction,
         });
-        dummy_interaction_trace_rows.extend([
-            expand_direction,
-            address_space,
-            BabyBear::from_canonical_usize(height),
-            BabyBear::from_canonical_usize(node_label),
-        ]);
+        dummy_interaction_trace_rows.push(BabyBear::from_bool(is_final));
+        dummy_interaction_trace_rows.push(address_space);
+        dummy_interaction_trace_rows.push(BabyBear::from_canonical_usize(height));
+        dummy_interaction_trace_rows.push(BabyBear::from_canonical_usize(node_label));
         dummy_interaction_trace_rows.extend(hash);
     };
     for (address_space, root) in initial_trees {
-        interaction(
-            InteractionType::Receive,
-            false,
-            address_space,
-            height,
-            0,
-            root.hash(),
-        );
+        interaction(false, false, address_space, height, 0, root.hash());
     }
     for (address_space, root) in final_trees_check {
-        interaction(
-            InteractionType::Receive,
-            true,
-            address_space,
-            height,
-            0,
-            root.hash(),
-        );
+        interaction(true, true, address_space, height, 0, root.hash());
     }
     let touched_leaves: HashSet<_> = touched_addresses
         .iter()
@@ -140,14 +119,7 @@ fn test<const CHUNK: usize>(
                 ))
                 .unwrap_or(&BabyBear::zero())
         });
-        interaction(
-            InteractionType::Send,
-            false,
-            address_space,
-            0,
-            label,
-            initial_values,
-        );
+        interaction(true, false, address_space, 0, label, initial_values);
         let final_values = std::array::from_fn(|i| {
             *final_memory
                 .get(&(
@@ -156,14 +128,7 @@ fn test<const CHUNK: usize>(
                 ))
                 .unwrap_or(&BabyBear::zero())
         });
-        interaction(
-            InteractionType::Send,
-            true,
-            address_space,
-            0,
-            label,
-            final_values,
-        );
+        interaction(false, true, address_space, 0, label, final_values);
     }
 
     while !(dummy_interaction_trace_rows.len() / (dummy_interaction_air.field_width() + 1))
