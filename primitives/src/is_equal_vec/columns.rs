@@ -43,8 +43,8 @@ impl<T: Clone> IsEqualVecAuxCols<T> {
 }
 
 impl<T> IsEqualVecAuxCols<T> {
-    pub fn flatten(self) -> Vec<T> {
-        self.prods.into_iter().chain(self.invs).collect()
+    pub fn flatten(self) -> impl IntoIterator<Item = T> {
+        self.prods.into_iter().chain(self.invs)
     }
 
     pub fn width(vec_len: usize) -> usize {

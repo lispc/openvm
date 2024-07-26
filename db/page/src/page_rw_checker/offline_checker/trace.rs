@@ -229,6 +229,9 @@ impl PageOfflineChecker {
             )
         });
 
-        RowMajorMatrix::new(rows.concat(), self.air_width())
+        RowMajorMatrix::new(
+            rows.par_iter().flat_map(|row| row.into_iter()).collect(),
+            self.air_width(),
+        )
     }
 }

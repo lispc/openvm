@@ -1,3 +1,5 @@
+use std::iter;
+
 use afs_primitives::offline_checker::columns::OfflineCheckerCols;
 
 use super::PageOfflineChecker;
@@ -45,16 +47,15 @@ impl<T: Clone> PageOfflineCheckerCols<T> {
 }
 
 impl<T> PageOfflineCheckerCols<T> {
-    pub fn flatten(self) -> Vec<T> {
-        let mut flattened = self.offline_checker_cols.flatten();
-
-        flattened.extend(vec![
-            self.is_initial,
-            self.is_final_write,
-            self.is_final_delete,
-        ]);
-        flattened.extend(vec![self.is_read, self.is_write, self.is_delete]);
-
-        flattened
+    pub fn flatten(self) -> impl IntoIterator<Item = T> {
+        self.offline_checker_cols
+            .flatten()
+            .into_iter()
+            .chain(iter::once(self.is_initial))
+            .chain(iter::once(self.is_final_write))
+            .chain(iter::once(self.is_final_delete))
+            .chain(iter::once(self.is_read))
+            .chain(iter::once(self.is_write))
+            .chain(iter::once(self.is_delete))
     }
 }

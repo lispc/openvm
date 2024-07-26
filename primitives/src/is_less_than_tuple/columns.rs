@@ -42,20 +42,12 @@ pub struct IsLessThanTupleAuxCols<T> {
 }
 
 impl<T> IsLessThanTupleAuxCols<T> {
-    pub fn flatten(self) -> Vec<T> {
-        let mut flattened = vec![];
-
-        flattened.extend(self.less_than);
-
-        for aux in self.less_than_aux.into_iter() {
-            flattened.extend(aux.flatten());
-        }
-
-        flattened.extend(self.is_equal_vec_aux.prods);
-        flattened.extend(self.is_equal_vec_aux.invs);
-        flattened.extend(self.less_than_cumulative);
-
-        flattened
+    pub fn flatten(self) -> impl IntoIterator<Item = T> {
+        self.less_than
+            .into_iter()
+            .chain(self.less_than_aux.into_iter().flat_map(|aux| aux.flatten()))
+            .chain(self.is_equal_vec_aux.flatten())
+            .chain(self.less_than_cumulative)
     }
 }
 
