@@ -6,8 +6,8 @@ use p3_matrix::dense::RowMajorMatrix;
 
 use crate::memory::expand::columns::ExpandCols;
 use crate::memory::expand::ExpandChip;
-use crate::memory::tree::MemoryNode::NonLeaf;
 use crate::memory::tree::{Hasher, MemoryNode};
+use crate::memory::tree::MemoryNode::NonLeaf;
 
 impl<const CHUNK: usize, F: PrimeField32> ExpandChip<CHUNK, F> {
     pub fn generate_trace_and_final_tree(
@@ -31,15 +31,19 @@ impl<const CHUNK: usize, F: PrimeField32> ExpandChip<CHUNK, F> {
             );
         }
         while rows.len() != trace_degree * ExpandCols::<CHUNK, F>::get_width() {
-            rows.extend(unused_row::<CHUNK, F>().flatten());
+            rows.extend(unused_row(hasher).flatten());
         }
         let trace = RowMajorMatrix::new(rows, ExpandCols::<CHUNK, F>::get_width());
         (trace, final_trees)
     }
 }
 
-fn unused_row<const CHUNK: usize, F: PrimeField32>() -> ExpandCols<CHUNK, F> {
-    ExpandCols::from_slice(&vec![F::zero(); ExpandCols::<CHUNK, F>::get_width()])
+fn unused_row<const CHUNK: usize, F: PrimeField32>(
+    hasher: &mut impl Hasher<CHUNK, F>,
+) -> ExpandCols<CHUNK, F> {
+    let mut result = ExpandCols::from_slice(&vec![F::zero(); ExpandCols::<CHUNK, F>::get_width()]);
+    result.parent_hash = hasher.hash([F::zero(); CHUNK], [F::zero(); CHUNK]);
+    result
 }
 
 struct TreeHelper<'a, const CHUNK: usize, F: PrimeField32> {
@@ -139,8 +143,8 @@ impl<'a, const CHUNK: usize, F: PrimeField32> TreeHelper<'a, CHUNK, F> {
                 parent_hash: hash,
                 left_child_hash: left.hash(),
                 right_child_hash: right.hash(),
-                left_direction_different: F::from_bool(left_direction_change),
-                right_direction_different: F::from_bool(right_direction_change),
+                left_direction_change: F::from_bool(left_direction_change),
+                right_direction_change: F::from_bool(right_direction_change),
             }
         } else {
             panic!("trace_rows expects node = {:?} to be NonLeaf", node);

@@ -9,10 +9,8 @@ pub struct ExpandCols<const CHUNK: usize, T> {
     pub parent_hash: [T; CHUNK],
     pub left_child_hash: [T; CHUNK],
     pub right_child_hash: [T; CHUNK],
-    // indicate whether `expand_direction` is different from origin
-    // when `expand_direction` != -1, must be 0
-    pub left_direction_different: T,
-    pub right_direction_different: T,
+    pub left_direction_change: T,
+    pub right_direction_change: T,
 }
 
 impl<const CHUNK: usize, T: Clone> ExpandCols<CHUNK, T> {
@@ -22,24 +20,24 @@ impl<const CHUNK: usize, T: Clone> ExpandCols<CHUNK, T> {
 
         let expand_direction = take();
         let address_space = take();
-        let parent_height = take();
+        let height = take();
         let parent_label = take();
         let parent_hash = std::array::from_fn(|_| take());
         let left_child_hash = std::array::from_fn(|_| take());
         let right_child_hash = std::array::from_fn(|_| take());
-        let left_direction_different = take();
-        let right_direction_different = take();
+        let left_is_final = take();
+        let right_is_final = take();
 
         Self {
             expand_direction,
             address_space,
-            parent_height,
+            parent_height: height,
             parent_label,
             parent_hash,
             left_child_hash,
             right_child_hash,
-            left_direction_different,
-            right_direction_different,
+            left_direction_change: left_is_final,
+            right_direction_change: right_is_final,
         }
     }
 
@@ -53,8 +51,8 @@ impl<const CHUNK: usize, T: Clone> ExpandCols<CHUNK, T> {
         result.extend(self.parent_hash.clone());
         result.extend(self.left_child_hash.clone());
         result.extend(self.right_child_hash.clone());
-        result.push(self.left_direction_different.clone());
-        result.push(self.right_direction_different.clone());
+        result.push(self.left_direction_change.clone());
+        result.push(self.right_direction_change.clone());
         result
     }
 
