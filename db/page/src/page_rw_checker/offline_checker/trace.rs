@@ -230,7 +230,9 @@ impl PageOfflineChecker {
         });
 
         RowMajorMatrix::new(
-            rows.par_iter().flat_map(|row| row.into_iter()).collect(),
+            rows.into_iter()
+                .flat_map(|row| row.into_par_iter())
+                .collect(),
             self.air_width(),
         )
     }
