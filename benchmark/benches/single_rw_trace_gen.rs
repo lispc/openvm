@@ -74,7 +74,7 @@ pub fn trace_gen_benchmark(c: &mut Criterion) {
 
     let dummy_ptd = get_dummy_ptd(&mut trace_builder.committer);
 
-    group.bench_function("trace gen", |b| {
+    group.bench_function("trace_gen", |b| {
         b.iter(|| {
             page_controller.load_page_and_ops(
                 black_box(&page),
@@ -155,12 +155,12 @@ fn generate_page_and_ops(
 
         if op_type == OpType::Write {
             if final_page.contains(&idx) {
-                final_page[black_box(&idx)].clone_from(&data);
+                final_page[&idx].clone_from(&data);
             } else {
                 final_page.insert(&idx, &data);
             }
         } else if op_type == OpType::Delete {
-            final_page.delete(black_box(&idx));
+            final_page.delete(&idx);
         }
 
         ops.push(Operation::new(clk, idx, data, op_type));
@@ -191,7 +191,7 @@ fn get_dummy_ptd(
     trace_committer: &mut TraceCommitter<BabyBearPoseidon2Config>,
 ) -> ProverTraceData<BabyBearPoseidon2Config> {
     let simple_trace = RowMajorMatrix::new_col(vec![Val::from_canonical_u32(1)]);
-    trace_committer.commit(black_box(vec![simple_trace]))
+    trace_committer.commit(vec![simple_trace])
 }
 
 criterion_group! {
