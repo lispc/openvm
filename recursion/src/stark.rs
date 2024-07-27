@@ -259,7 +259,7 @@ where
                     points: trace_points.clone(),
                 };
 
-                let mut mats: Array<_, TwoAdicPcsMatsVariable<_>> = builder.dyn_array(num_airs);
+                let mut mats: Array<_, TwoAdicPcsMatsVariable<_>> = builder.dyn_array(1);
                 builder.set_value(&mut mats, 0, prep_mat);
 
                 builder.set_value(
