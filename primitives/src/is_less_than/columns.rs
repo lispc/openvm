@@ -1,3 +1,5 @@
+use std::iter;
+
 use afs_derive::AlignedBorrow;
 
 use super::IsLessThanAir;
@@ -36,10 +38,8 @@ pub struct IsLessThanAuxCols<T> {
 }
 
 impl<T> IsLessThanAuxCols<T> {
-    pub fn flatten(self) -> Vec<T> {
-        let mut flattened = vec![self.lower];
-        flattened.extend(self.lower_decomp);
-        flattened
+    pub fn flatten(self) -> impl Iterator<Item = T> {
+        iter::once(self.lower).chain(self.lower_decomp)
     }
 }
 

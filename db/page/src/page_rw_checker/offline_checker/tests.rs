@@ -8,5 +8,5 @@ fn offline_checker_from_slice_test() {
     let all_cols = (0..offline_checker.air_width()).collect::<Vec<usize>>();
     let cols = PageOfflineCheckerCols::<usize>::from_slice(&all_cols, &offline_checker);
 
-    assert!(cols.flatten().into_iter().collect::<Vec<_>>() == all_cols);
+    assert!(cols.flatten().collect::<Vec<_>>() == all_cols);
 }

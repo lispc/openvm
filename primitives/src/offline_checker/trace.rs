@@ -39,7 +39,6 @@ impl<F: PrimeField64, Operation: OfflineCheckerOperation<F> + Clone>
                     range_checker.clone(),
                 ))
                 .flatten()
-                .into_iter()
                 .collect(),
             );
         }
@@ -55,7 +54,6 @@ impl<F: PrimeField64, Operation: OfflineCheckerOperation<F> + Clone>
                     range_checker.clone(),
                 ))
                 .flatten()
-                .into_iter()
                 .collect(),
             );
         }
@@ -71,7 +69,6 @@ impl<F: PrimeField64, Operation: OfflineCheckerOperation<F> + Clone>
                     range_checker.clone(),
                 ))
                 .flatten()
-                .into_iter()
                 .collect(),
             );
         }
@@ -87,7 +84,6 @@ impl<F: PrimeField64, Operation: OfflineCheckerOperation<F> + Clone>
                     range_checker.clone(),
                 ))
                 .flatten()
-                .into_iter()
                 .collect(),
             );
         }

@@ -65,7 +65,7 @@ impl<T: Clone> OfflineCheckerCols<T> {
 }
 
 impl<T> OfflineCheckerCols<T> {
-    pub fn flatten(self) -> impl IntoIterator<Item = T> {
+    pub fn flatten(self) -> impl Iterator<Item = T> {
         iter::once(self.clk)
             .chain(self.idx)
             .chain(self.data)

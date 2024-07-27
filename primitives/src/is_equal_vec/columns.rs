@@ -43,7 +43,7 @@ impl<T: Clone> IsEqualVecAuxCols<T> {
 }
 
 impl<T> IsEqualVecAuxCols<T> {
-    pub fn flatten(self) -> impl IntoIterator<Item = T> {
+    pub fn flatten(self) -> impl Iterator<Item = T> {
         self.prods.into_iter().chain(self.invs)
     }
 

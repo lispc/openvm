@@ -37,7 +37,7 @@ impl GroupByAir {
                 &self.is_equal_vec_air,
                 (vecs[0].clone(), vecs[1].clone()),
             );
-            eq_vec_aux_trace.push(local_is_eq_vec_cols.aux.flatten().into_iter().collect());
+            eq_vec_aux_trace.push(local_is_eq_vec_cols.aux.flatten().collect());
             is_equal.push(vec![F::from_bool(vecs[0] == vecs[1])]);
         }
         // fill in the last row with zeros

@@ -67,7 +67,6 @@ impl<T: Clone> IntersectorAuxCols<T> {
     pub fn flatten(self) -> Vec<T> {
         self.lt_aux
             .flatten()
-            .into_iter()
             .chain(iter::once(self.lt_out))
             .collect()
     }
