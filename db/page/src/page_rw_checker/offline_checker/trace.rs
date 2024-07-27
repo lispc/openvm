@@ -101,10 +101,10 @@ impl PageOfflineChecker {
                 is_delete: Val::<SC>::from_bool(is_delete),
             };
 
-            cols.flatten()
+            cols.flatten().into_iter().collect::<Vec<Val<SC>>>()
         };
 
-        let mut rows = vec![];
+        let mut rows_concat = Vec::with_capacity(self.air_width() * trace_degree);
 
         let mut is_first_row = true;
 
@@ -130,7 +130,7 @@ impl PageOfflineChecker {
                 };
 
                 // Adding the is_initial row to the trace
-                rows.push(gen_row(
+                rows_concat.extend(gen_row(
                     &mut is_first_row,
                     true,
                     false,
@@ -151,7 +151,7 @@ impl PageOfflineChecker {
                     page_editor.delete(&cur_idx);
                 }
 
-                rows.push(gen_row(
+                rows_concat.extend(gen_row(
                     &mut is_first_row,
                     false,
                     false,
@@ -181,7 +181,7 @@ impl PageOfflineChecker {
             };
 
             // Adding the is_final row to the trace
-            rows.push(gen_row(
+            rows_concat.extend(gen_row(
                 &mut is_first_row,
                 false,
                 true,
@@ -199,11 +199,12 @@ impl PageOfflineChecker {
 
         *page = page_editor.into_page();
 
-        if rows.len() < trace_degree {
-            prev_op = curr_op.clone();
+        // Adding rows to the trace to make the height trace_degree
+        while rows_concat.len() < self.air_width() * trace_degree {
+            prev_op = curr_op;
             curr_op = dummy_op.clone();
 
-            rows.push(gen_row(
+            rows_concat.extend(gen_row(
                 &mut is_first_row,
                 false,
                 false,
@@ -214,24 +215,6 @@ impl PageOfflineChecker {
             ));
         }
 
-        prev_op = dummy_op.clone();
-
-        // Adding rows to the trace to make the height trace_degree
-        rows.resize_with(trace_degree, || {
-            gen_row(
-                &mut is_first_row,
-                false,
-                false,
-                false,
-                &curr_op,
-                &prev_op,
-                false,
-            )
-        });
-
-        RowMajorMatrix::new(
-            rows.into_iter().flat_map(|row| row.into_iter()).collect(),
-            self.air_width(),
-        )
+        RowMajorMatrix::new(rows_concat, self.air_width())
     }
 }
