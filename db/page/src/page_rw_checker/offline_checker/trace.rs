@@ -101,10 +101,11 @@ impl PageOfflineChecker {
                 is_delete: Val::<SC>::from_bool(is_delete),
             };
 
-            cols.flatten().into_iter().collect::<Vec<Val<SC>>>()
+            cols.flatten()
         };
 
-        let mut rows_concat = Vec::with_capacity(self.air_width() * trace_degree);
+        let rows_concat_tot_width = self.air_width() * trace_degree;
+        let mut rows_concat = Vec::with_capacity(rows_concat_tot_width);
 
         let mut is_first_row = true;
 
@@ -199,11 +200,26 @@ impl PageOfflineChecker {
 
         *page = page_editor.into_page();
 
-        // Adding rows to the trace to make the height trace_degree
-        while rows_concat.len() < self.air_width() * trace_degree {
+        if rows_concat.len() < rows_concat_tot_width {
             prev_op = curr_op;
             curr_op = dummy_op.clone();
 
+            rows_concat.extend(gen_row(
+                &mut is_first_row,
+                false,
+                false,
+                false,
+                &curr_op,
+                &prev_op,
+                false,
+            ));
+        }
+
+        prev_op = dummy_op.clone();
+        curr_op = dummy_op;
+
+        // Adding rows to the trace to make the height trace_degree
+        while rows_concat.len() < rows_concat_tot_width {
             rows_concat.extend(gen_row(
                 &mut is_first_row,
                 false,
