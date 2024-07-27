@@ -20,7 +20,7 @@ pub struct RangeCheckerChip {
 
 impl RangeCheckerChip {
     pub fn new(bus_index: usize, range_max: u32) -> Self {
-        let mut count = vec![];
+        let mut count = Vec::with_capacity(range_max as usize);
         for _ in 0..range_max {
             count.push(Arc::new(AtomicU32::new(0)));
         }

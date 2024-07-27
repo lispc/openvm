@@ -47,14 +47,15 @@ impl<T: Clone> PageOfflineCheckerCols<T> {
 }
 
 impl<T> PageOfflineCheckerCols<T> {
+    #[inline(always)]
     pub fn flatten(self) -> impl Iterator<Item = T> {
-        self.offline_checker_cols
-            .flatten()
-            .chain(iter::once(self.is_initial))
-            .chain(iter::once(self.is_final_write))
-            .chain(iter::once(self.is_final_delete))
-            .chain(iter::once(self.is_read))
-            .chain(iter::once(self.is_write))
-            .chain(iter::once(self.is_delete))
+        self.offline_checker_cols.flatten().chain(vec![
+            self.is_initial,
+            self.is_final_write,
+            self.is_final_delete,
+            self.is_read,
+            self.is_write,
+            self.is_delete,
+        ])
     }
 }

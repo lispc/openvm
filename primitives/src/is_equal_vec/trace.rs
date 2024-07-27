@@ -38,21 +38,28 @@ impl<F: Field> LocalTraceInstructions<F> for IsEqualVecAir {
             transition_index += 1;
         }
 
-        let prods = std::iter::repeat(F::one())
-            .take(transition_index)
-            .chain(std::iter::repeat(F::zero()).take(vec_len - transition_index))
-            .collect::<Vec<F>>();
+        let prods: Vec<F> = (0..vec_len - 1)
+            .map(|i| {
+                if i < transition_index {
+                    F::one()
+                } else {
+                    F::zero()
+                }
+            })
+            .collect();
 
-        let is_equal = prods[vec_len - 1];
+        let is_equal = if vec_len - 1 < transition_index {
+            F::one()
+        } else {
+            F::zero()
+        };
 
-        let mut invs = std::iter::repeat(F::zero())
-            .take(vec_len)
-            .collect::<Vec<F>>();
+        let mut invs = vec![F::zero(); vec_len];
 
         if transition_index != vec_len {
             invs[transition_index] = (x_row[transition_index] - y_row[transition_index]).inverse();
         }
 
-        IsEqualVecCols::new(x_row, y_row, is_equal, prods[..vec_len - 1].to_vec(), invs)
+        IsEqualVecCols::new(x_row, y_row, is_equal, prods, invs)
     }
 }

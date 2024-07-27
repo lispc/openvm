@@ -38,6 +38,7 @@ pub struct IsLessThanAuxCols<T> {
 }
 
 impl<T> IsLessThanAuxCols<T> {
+    #[inline(always)]
     pub fn flatten(self) -> impl Iterator<Item = T> {
         iter::once(self.lower).chain(self.lower_decomp)
     }

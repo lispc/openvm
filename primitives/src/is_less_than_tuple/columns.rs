@@ -42,6 +42,7 @@ pub struct IsLessThanTupleAuxCols<T> {
 }
 
 impl<T> IsLessThanTupleAuxCols<T> {
+    #[inline(always)]
     pub fn flatten(self) -> impl Iterator<Item = T> {
         self.less_than
             .into_iter()

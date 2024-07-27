@@ -65,15 +65,18 @@ impl<T: Clone> OfflineCheckerCols<T> {
 }
 
 impl<T> OfflineCheckerCols<T> {
+    #[inline(always)]
     pub fn flatten(self) -> impl Iterator<Item = T> {
         iter::once(self.clk)
             .chain(self.idx)
             .chain(self.data)
-            .chain(iter::once(self.op_type))
-            .chain(iter::once(self.same_idx))
-            .chain(iter::once(self.lt_bit))
-            .chain(iter::once(self.is_valid))
-            .chain(iter::once(self.is_receive))
+            .chain(vec![
+                self.op_type,
+                self.same_idx,
+                self.lt_bit,
+                self.is_valid,
+                self.is_receive,
+            ])
             .chain(self.is_equal_idx_aux.flatten())
             .chain(self.lt_aux.flatten())
     }
