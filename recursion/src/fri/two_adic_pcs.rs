@@ -94,6 +94,7 @@ pub fn verify_two_adic_pcs<C: Config>(
                 let bits_reduced: Var<_> =
                     builder.eval(log_global_max_height - log_batch_max_height);
                 let index_bits_shifted_v1 = index_bits.shift(builder, bits_reduced);
+
                 verify_batch::<C, 1>(
                     builder,
                     &batch_commit,

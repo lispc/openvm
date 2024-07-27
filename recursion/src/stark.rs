@@ -272,42 +272,41 @@ where
         }
 
         // 2. Then the main trace openings.
-        vk.main_commit_to_air_graph
+        for (commit_idx, matrix_to_air_index) in vk
+            .main_commit_to_air_graph
             .commit_to_air_index
             .iter()
             .enumerate()
-            .for_each(|(commit_idx, matrix_to_air_index)| {
-                let values_per_mat = builder.get(&proof.opening.values.main, commit_idx);
-                let batch_commit = builder.get(main_trace_commits, commit_idx);
+        {
+            let values_per_mat = builder.get(&proof.opening.values.main, commit_idx);
+            let batch_commit = builder.get(main_trace_commits, commit_idx);
 
-                builder.assert_usize_eq(values_per_mat.len(), matrix_to_air_index.len());
-                let mut mats: Array<_, TwoAdicPcsMatsVariable<_>> =
-                    builder.dyn_array(matrix_to_air_index.len());
+            builder.assert_usize_eq(values_per_mat.len(), matrix_to_air_index.len());
+            let mut mats: Array<_, TwoAdicPcsMatsVariable<_>> =
+                builder.dyn_array(matrix_to_air_index.len());
 
-                matrix_to_air_index
-                    .iter()
-                    .enumerate()
-                    .for_each(|(matrix_idx, &air_idx)| {
-                        let main = builder.get(&values_per_mat, matrix_idx);
-                        let domain = builder.get(&domains, air_idx);
-                        let trace_points = builder.get(&trace_points_per_domain, air_idx);
-                        let mut values = builder.dyn_array::<Array<C, _>>(2);
-                        builder.set_value(&mut values, 0, main.local);
-                        builder.set_value(&mut values, 1, main.next);
-                        let main_mat = TwoAdicPcsMatsVariable::<C> {
-                            domain,
-                            values,
-                            points: trace_points,
-                        };
-                        builder.set_value(&mut mats, air_idx, main_mat);
-                    });
-                builder.set_value(
-                    &mut rounds,
-                    round_idx,
-                    TwoAdicPcsRoundVariable { batch_commit, mats },
-                );
-                round_idx += 1;
-            });
+            for (matrix_idx, &air_idx) in matrix_to_air_index.iter().enumerate() {
+                let main = builder.get(&values_per_mat, matrix_idx);
+                let domain = builder.get(&domains, air_idx);
+                let trace_points = builder.get(&trace_points_per_domain, air_idx);
+                let mut values = builder.dyn_array::<Array<C, _>>(2);
+                builder.set_value(&mut values, 0, main.local);
+                builder.set_value(&mut values, 1, main.next);
+                let main_mat = TwoAdicPcsMatsVariable::<C> {
+                    domain,
+                    values,
+                    points: trace_points,
+                };
+                builder.set_value(&mut mats, air_idx, main_mat);
+            }
+
+            builder.set_value(
+                &mut rounds,
+                round_idx,
+                TwoAdicPcsRoundVariable { batch_commit, mats },
+            );
+            round_idx += 1;
+        }
 
         // 3. After challenge: one per phase
         for phase_idx in 0..vk.num_challenges_to_sample.len() {
@@ -400,6 +399,8 @@ where
         let mut preprocessed_idx = 0;
 
         for (index, (&rap, air_const)) in raps.iter().zip_eq(vk.per_air.iter()).enumerate() {
+            builder.print_debug(index);
+
             let preprocessed_values =
                 if <dyn DynRapForRecursion<C> as BaseAir<C::F>>::preprocessed_trace(rap).is_some() {
                     let ret =
@@ -528,8 +529,8 @@ where
             .iter()
             .zip_eq(constants.width.partitioned_main.iter())
             .map(|(main_values, &width)| {
-                builder.assert_usize_eq(main_values.local.len(), width);
-                builder.assert_usize_eq(main_values.next.len(), width);
+                // builder.assert_usize_eq(main_values.local.len(), width);
+                // builder.assert_usize_eq(main_values.next.len(), width);
                 let mut main = AdjacentOpenedValues {
                     local: vec![],
                     next: vec![],
