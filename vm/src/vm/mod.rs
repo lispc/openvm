@@ -1,31 +1,32 @@
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::Arc;
 
-use afs_primitives::range_gate::RangeCheckerGateChip;
-use afs_stark_backend::rap::AnyRap;
 use p3_field::PrimeField32;
 use p3_matrix::{dense::DenseMatrix, Matrix};
 use p3_uni_stark::{StarkGenericConfig, Val};
 use p3_util::log2_strict_usize;
+
+use afs_primitives::range_gate::RangeCheckerGateChip;
+use afs_stark_backend::rap::AnyRap;
 use poseidon2_air::poseidon2::Poseidon2Config;
+
+use crate::{
+    cpu::{
+        CpuAir,
+        CpuOptions, POSEIDON2_BUS, RANGE_CHECKER_BUS, trace::{ExecutionError, Instruction},
+    },
+    field_arithmetic::FieldArithmeticChip,
+    field_extension::FieldExtensionArithmeticChip,
+    poseidon2::Poseidon2Chip,
+    program::ProgramChip,
+};
+use crate::memory::MemoryCircuit;
+
+use self::config::VmConfig;
 
 pub mod cycle_tracker;
 
 pub enum Void {}
-
-use crate::{
-    cpu::{
-        trace::{ExecutionError, Instruction},
-        CpuAir, CpuOptions, POSEIDON2_BUS, RANGE_CHECKER_BUS,
-    },
-    field_arithmetic::FieldArithmeticChip,
-    field_extension::FieldExtensionArithmeticChip,
-    memory::offline_checker::MemoryChip,
-    poseidon2::Poseidon2Chip,
-    program::ProgramChip,
-};
-
-use self::config::VmConfig;
 
 pub mod config;
 
@@ -34,7 +35,7 @@ pub struct VirtualMachine<const WORD_SIZE: usize, F: PrimeField32> {
 
     pub cpu_air: CpuAir<WORD_SIZE>,
     pub program_chip: ProgramChip<F>,
-    pub memory_chip: MemoryChip<WORD_SIZE, F>,
+    pub memory_chip: MemoryCircuit<WORD_SIZE, F>,
     pub field_arithmetic_chip: FieldArithmeticChip<F>,
     pub field_extension_chip: FieldExtensionArithmeticChip<WORD_SIZE, F>,
     pub range_checker: Arc<RangeCheckerGateChip>,
@@ -53,7 +54,7 @@ impl<const WORD_SIZE: usize, F: PrimeField32> VirtualMachine<WORD_SIZE, F> {
 
         let cpu_air = CpuAir::new(config.cpu_options());
         let program_chip = ProgramChip::new(program.clone());
-        let memory_chip = MemoryChip::new(limb_bits, limb_bits, limb_bits, decomp);
+        let memory_chip = MemoryCircuit::new(limb_bits, limb_bits, limb_bits, decomp);
         let field_arithmetic_chip = FieldArithmeticChip::new();
         let field_extension_chip = FieldExtensionArithmeticChip::new();
         let poseidon2_chip = Poseidon2Chip::from_poseidon2_config(
@@ -84,7 +85,8 @@ impl<const WORD_SIZE: usize, F: PrimeField32> VirtualMachine<WORD_SIZE, F> {
         let mut result = vec![
             cpu_trace,
             self.program_chip.generate_trace(),
-            self.memory_chip.generate_trace(self.range_checker.clone()),
+            self.memory_chip
+                .generate_offline_checker_trace(self.range_checker.clone()),
             self.range_checker.generate_trace(),
         ];
         if self.options().field_arithmetic_enabled {
@@ -166,7 +168,7 @@ where
     let mut result: Vec<&dyn AnyRap<SC>> = vec![
         &vm.cpu_air,
         &vm.program_chip.air,
-        &vm.memory_chip.air,
+        &vm.memory_chip.offline_checker,
         &vm.range_checker.air,
     ];
     if vm.options().field_arithmetic_enabled {

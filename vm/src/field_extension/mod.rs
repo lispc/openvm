@@ -1,8 +1,9 @@
 use p3_field::{Field, PrimeField32};
 
-use crate::cpu::trace::Instruction;
-use crate::cpu::FIELD_EXTENSION_INSTRUCTIONS;
 use crate::{cpu::OpCode, vm::VirtualMachine};
+use crate::cpu::FIELD_EXTENSION_INSTRUCTIONS;
+use crate::cpu::trace::Instruction;
+use crate::memory::api::VmMemory;
 
 pub mod air;
 pub mod bridge;

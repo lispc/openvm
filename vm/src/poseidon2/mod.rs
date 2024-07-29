@@ -1,16 +1,18 @@
-use p3_field::PrimeField32;
 use std::array;
 
-use crate::memory::tree::Hasher;
+use p3_field::PrimeField32;
+
+use afs_primitives::{is_zero::IsZeroAir, sub_chip::LocalTraceInstructions};
 use columns::*;
 use poseidon2_air::poseidon2::Poseidon2Air;
 use poseidon2_air::poseidon2::Poseidon2Config;
 
-use crate::cpu::trace::Instruction;
 use crate::cpu::OpCode;
 use crate::cpu::OpCode::*;
+use crate::cpu::trace::Instruction;
+use crate::memory::api::VmMemory;
+use crate::memory::tree::Hasher;
 use crate::vm::VirtualMachine;
-use afs_primitives::{is_zero::IsZeroAir, sub_chip::LocalTraceInstructions};
 
 #[cfg(test)]
 pub mod tests;

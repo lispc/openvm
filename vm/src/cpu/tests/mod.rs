@@ -1,22 +1,25 @@
-use crate::cpu::columns::{CpuCols, CpuIoCols};
-use crate::cpu::{max_accesses_per_instruction, CpuAir, CpuOptions};
-use crate::field_arithmetic::ArithmeticOperation;
-use crate::memory::{decompose, MemoryAccess, OpType};
-use crate::vm::config::VmConfig;
-use crate::vm::VirtualMachine;
-use afs_primitives::is_zero::IsZeroAir;
-use afs_stark_backend::verifier::VerificationError;
-use afs_test_utils::config::baby_bear_poseidon2::run_simple_test_no_pis;
-use afs_test_utils::interaction::dummy_interaction_air::DummyInteractionAir;
 use p3_baby_bear::BabyBear;
 use p3_field::{AbstractField, PrimeField64};
 use p3_matrix::dense::{DenseMatrix, RowMajorMatrix};
 use p3_matrix::Matrix;
 
+use afs_primitives::is_zero::IsZeroAir;
+use afs_stark_backend::verifier::VerificationError;
+use afs_test_utils::config::baby_bear_poseidon2::run_simple_test_no_pis;
+use afs_test_utils::interaction::dummy_interaction_air::DummyInteractionAir;
+
+use crate::cpu::{CpuAir, CpuOptions, max_accesses_per_instruction};
+use crate::cpu::columns::{CpuCols, CpuIoCols};
+use crate::field_arithmetic::ArithmeticOperation;
+use crate::memory::{decompose, OpType};
+use crate::memory::offline_checker::MemoryAccess;
+use crate::vm::config::VmConfig;
+use crate::vm::VirtualMachine;
+
+use super::{OpCode::*, trace::Instruction};
+use super::{ARITHMETIC_BUS, MEMORY_BUS, READ_INSTRUCTION_BUS};
 use super::columns::MemoryAccessCols;
 use super::trace::isize_to_field;
-use super::{trace::Instruction, OpCode::*};
-use super::{ARITHMETIC_BUS, MEMORY_BUS, READ_INSTRUCTION_BUS};
 
 const TEST_WORD_SIZE: usize = 1;
 const LIMB_BITS: usize = 16;

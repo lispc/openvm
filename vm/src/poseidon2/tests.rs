@@ -5,7 +5,6 @@ use p3_field::AbstractField;
 use p3_matrix::dense::RowMajorMatrix;
 use p3_matrix::Matrix;
 use p3_util::log2_strict_usize;
-use poseidon2_air::poseidon2::Poseidon2Config;
 use rand::Rng;
 use rand::RngCore;
 
@@ -17,11 +16,13 @@ use afs_test_utils::config::{
 use afs_test_utils::engine::StarkEngine;
 use afs_test_utils::interaction::dummy_interaction_air::DummyInteractionAir;
 use afs_test_utils::utils::create_seeded_rng;
+use poseidon2_air::poseidon2::Poseidon2Config;
 
-use crate::cpu::trace::Instruction;
+use crate::cpu::{MEMORY_BUS, POSEIDON2_BUS};
 use crate::cpu::OpCode::{COMP_POS2, PERM_POS2};
 use crate::cpu::POSEIDON2_DIRECT_BUS;
-use crate::cpu::{MEMORY_BUS, POSEIDON2_BUS};
+use crate::cpu::trace::Instruction;
+use crate::memory::api::VmMemory;
 use crate::memory::tree::Hasher;
 use crate::vm::config::VmConfig;
 use crate::vm::VirtualMachine;
@@ -157,7 +158,9 @@ macro_rules! run_perm_ops {
             5 + 1,
         );
 
-        let memory_chip_trace = vm.memory_chip.generate_trace(vm.range_checker.clone());
+        let memory_chip_trace = vm
+            .memory_chip
+            .generate_offline_checker_trace(vm.range_checker.clone());
         let range_checker_trace = vm.range_checker.generate_trace();
         let poseidon2_trace = vm.poseidon2_chip.generate_trace();
 
@@ -218,7 +221,7 @@ fn poseidon2_chip_random_50_test() {
         .run_simple_test(
             vec![
                 &vm.range_checker.air,
-                &vm.memory_chip.air,
+                &vm.memory_chip.offline_checker,
                 &vm.poseidon2_chip.air,
                 &dummy_cpu_memory,
                 &dummy_cpu_poseidon2,
@@ -255,7 +258,7 @@ fn poseidon2_negative_test() {
             engine.run_simple_test(
                 vec![
                     &vm.range_checker.air,
-                    &vm.memory_chip.air,
+                    &vm.memory_chip.offline_checker,
                     &vm.poseidon2_chip.air,
                     &dummy_cpu_memory,
                     &dummy_cpu_poseidon2,

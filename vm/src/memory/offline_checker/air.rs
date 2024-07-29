@@ -1,15 +1,27 @@
-use afs_primitives::{
-    offline_checker::columns::OfflineCheckerCols,
-    sub_chip::{AirConfig, SubAir},
-};
-use afs_stark_backend::{air_builders::PartitionedAirBuilder, interaction::InteractionBuilder};
 use p3_air::{Air, AirBuilder, BaseAir};
 use p3_field::{AbstractField, Field, PrimeField32};
 use p3_matrix::Matrix;
 
-use super::{MemoryChip, MemoryOfflineChecker};
+use afs_primitives::{
+    offline_checker::columns::OfflineCheckerCols,
+    sub_chip::{AirConfig, SubAir},
+};
+use afs_primitives::offline_checker::OfflineChecker;
+use afs_stark_backend::{air_builders::PartitionedAirBuilder, interaction::InteractionBuilder};
 
-impl<const WORD_SIZE: usize, F: PrimeField32> AirConfig for MemoryChip<WORD_SIZE, F> {
+use crate::memory::MemoryCircuit;
+
+pub struct MemoryOfflineChecker {
+    pub offline_checker: OfflineChecker,
+}
+
+impl MemoryOfflineChecker {
+    pub fn air_width(&self) -> usize {
+        OfflineChecker::air_width(&self.offline_checker)
+    }
+}
+
+impl<const WORD_SIZE: usize, F: PrimeField32> AirConfig for MemoryCircuit<WORD_SIZE, F> {
     type Cols<T> = OfflineCheckerCols<T>;
 }
 
