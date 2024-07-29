@@ -8,9 +8,6 @@ use super::A0;
 
 #[derive(Debug, Clone)]
 pub enum AsmInstruction<F, EF> {
-    /// Load extension immediate (address, value)
-    ImmE(i32, EF),
-
     /// Load word (dst, src, index, offset, size).
     ///
     /// Load a value from the address stored at src(fp) into dst(fp).
@@ -141,8 +138,8 @@ pub enum AsmInstruction<F, EF> {
     /// FRIFold(m, input).
     FriFold(i32, i32),
 
-    /// Commit(val, index).
-    Commit(i32, i32),
+    /// Publish(val, index).
+    Publish(i32, i32),
 
     /// RegisterPublicValue(val).
     RegisterPublicValue(i32),
@@ -843,9 +840,6 @@ impl<F: PrimeField32, EF: ExtensionField<F>> AsmInstruction<F, EF> {
             AsmInstruction::LessThan(dst, left, right) => {
                 write!(f, "lt  ({})fp, {}, {}", dst, left, right,)
             }
-            AsmInstruction::ImmE(dst, val) => {
-                write!(f, "imme   ({})fp, {}", dst, val)
-            }
             AsmInstruction::LoadF(dst, src, index, offset, size) => {
                 write!(
                     f,
@@ -1065,7 +1059,7 @@ impl<F: PrimeField32, EF: ExtensionField<F>> AsmInstruction<F, EF> {
                     result, src1, src2
                 )
             }
-            AsmInstruction::Commit(val, index) => {
+            AsmInstruction::Publish(val, index) => {
                 write!(f, "commit ({})fp ({})fp", val, index)
             }
             AsmInstruction::RegisterPublicValue(val) => {
