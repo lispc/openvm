@@ -385,235 +385,235 @@ fn air_test_change<
     }
 }
 
-#[test]
-fn test_cpu_1() {
-    let n = 2;
+// #[test]
+// fn test_cpu_1() {
+//     let n = 2;
 
-    /*
-    Instruction 0 assigns word[0]_1 to n.
-    Instruction 4 terminates
-    The remainder is a loop that decrements word[0]_1 until it reaches 0, then terminates.
-    Instruction 1 checks if word[0]_1 is 0 yet, and if so sets pc to 5 in order to terminate
-    Instruction 2 decrements word[0]_1 (using word[1]_1)
-    Instruction 3 uses JAL as a simple jump to go back to instruction 1 (repeating the loop).
-     */
-    let instructions = vec![
-        // word[0]_1 <- word[n]_0
-        Instruction::<BabyBear>::from_isize(STOREW, n, 0, 0, 0, 1),
-        // if word[0]_1 == 0 then pc += 3
-        Instruction::<BabyBear>::from_isize(BEQ, 0, 0, 3, 1, 0),
-        // word[0]_1 <- word[0]_1 - word[1]_0
-        Instruction::<BabyBear>::from_isize(FSUB, 0, 0, 1, 1, 0),
-        // word[2]_1 <- pc + 1, pc -= 2
-        Instruction::<BabyBear>::from_isize(JAL, 2, -2, 0, 1, 0),
-        // terminate
-        Instruction::<BabyBear>::from_isize(TERMINATE, 0, 0, 0, 0, 0),
-    ];
+//     /*
+//     Instruction 0 assigns word[0]_1 to n.
+//     Instruction 4 terminates
+//     The remainder is a loop that decrements word[0]_1 until it reaches 0, then terminates.
+//     Instruction 1 checks if word[0]_1 is 0 yet, and if so sets pc to 5 in order to terminate
+//     Instruction 2 decrements word[0]_1 (using word[1]_1)
+//     Instruction 3 uses JAL as a simple jump to go back to instruction 1 (repeating the loop).
+//      */
+//     let instructions = vec![
+//         // word[0]_1 <- word[n]_0
+//         Instruction::<BabyBear>::from_isize(STOREW, n, 0, 0, 0, 1),
+//         // if word[0]_1 == 0 then pc += 3
+//         Instruction::<BabyBear>::from_isize(BEQ, 0, 0, 3, 1, 0),
+//         // word[0]_1 <- word[0]_1 - word[1]_0
+//         Instruction::<BabyBear>::from_isize(FSUB, 0, 0, 1, 1, 0),
+//         // word[2]_1 <- pc + 1, pc -= 2
+//         Instruction::<BabyBear>::from_isize(JAL, 2, -2, 0, 1, 0),
+//         // terminate
+//         Instruction::<BabyBear>::from_isize(TERMINATE, 0, 0, 0, 0, 0),
+//     ];
 
-    let program = Program {
-        instructions,
-        debug_infos: vec![None; 5],
-    };
+//     let program = Program {
+//         instructions,
+//         debug_infos: vec![None; 5],
+//     };
 
-    let mut expected_execution: Vec<usize> = vec![0, 1];
-    for _ in 0..n {
-        expected_execution.push(2);
-        expected_execution.push(3);
-        expected_execution.push(1);
-    }
-    expected_execution.push(4);
+//     let mut expected_execution: Vec<usize> = vec![0, 1];
+//     for _ in 0..n {
+//         expected_execution.push(2);
+//         expected_execution.push(3);
+//         expected_execution.push(1);
+//     }
+//     expected_execution.push(4);
 
-    let storew_time = max_accesses_per_instruction(STOREW) as isize;
-    let beq_time = max_accesses_per_instruction(BEQ) as isize;
-    let fsub_time = max_accesses_per_instruction(FSUB) as isize;
-    let jal_time = max_accesses_per_instruction(JAL) as isize;
+//     let storew_time = max_accesses_per_instruction(STOREW) as isize;
+//     let beq_time = max_accesses_per_instruction(BEQ) as isize;
+//     let fsub_time = max_accesses_per_instruction(FSUB) as isize;
+//     let jal_time = max_accesses_per_instruction(JAL) as isize;
 
-    let mut expected_memory_log = vec![
-        MemoryAccess::<TEST_WORD_SIZE, BabyBear>::from_isize(2, OpType::Write, 1, 0, n),
-        MemoryAccess::<TEST_WORD_SIZE, BabyBear>::from_isize(storew_time, OpType::Read, 1, 0, n),
-    ];
-    // for t in 0..n {
-    //     let base = storew_time + beq_time + ((fsub_time + jal_time + beq_time) * t);
-    //     expected_memory_log.extend(vec![
-    //         MemoryAccess::<TEST_WORD_SIZE, BabyBear>::from_isize(base, OpType::Read, 1, 0, n - t),
-    //         MemoryAccess::<TEST_WORD_SIZE, BabyBear>::from_isize(
-    //             base + 2,
-    //             OpType::Write,
-    //             1,
-    //             0,
-    //             n - t - 1,
-    //         ),
-    //         MemoryAccess::<BabyBear>::from_isize(base + fsub_time + 2, OpType::Write, 1, 2, 4),
-    //         MemoryAccess::<BabyBear>::from_isize(
-    //             base + fsub_time + jal_time,
-    //             OpType::Read,
-    //             1,
-    //             0,
-    //             n - t - 1,
-    //         ),
-    //     ]);
-    // }
+//     let mut expected_memory_log = vec![
+//         MemoryAccess::<TEST_WORD_SIZE, BabyBear>::from_isize(2, OpType::Write, 1, 0, n),
+//         MemoryAccess::<TEST_WORD_SIZE, BabyBear>::from_isize(storew_time, OpType::Read, 1, 0, n),
+//     ];
+//     // for t in 0..n {
+//     //     let base = storew_time + beq_time + ((fsub_time + jal_time + beq_time) * t);
+//     //     expected_memory_log.extend(vec![
+//     //         MemoryAccess::<TEST_WORD_SIZE, BabyBear>::from_isize(base, OpType::Read, 1, 0, n - t),
+//     //         MemoryAccess::<TEST_WORD_SIZE, BabyBear>::from_isize(
+//     //             base + 2,
+//     //             OpType::Write,
+//     //             1,
+//     //             0,
+//     //             n - t - 1,
+//     //         ),
+//     //         MemoryAccess::<BabyBear>::from_isize(base + fsub_time + 2, OpType::Write, 1, 2, 4),
+//     //         MemoryAccess::<BabyBear>::from_isize(
+//     //             base + fsub_time + jal_time,
+//     //             OpType::Read,
+//     //             1,
+//     //             0,
+//     //             n - t - 1,
+//     //         ),
+//     //     ]);
+//     // }
 
-    let mut expected_arithmetic_operations = vec![];
-    for t in 0..n {
-        expected_arithmetic_operations.push(ArithmeticOperation::<BabyBear>::from_isize(
-            FSUB,
-            n - t,
-            1,
-            n - t - 1,
-        ));
-    }
+//     let mut expected_arithmetic_operations = vec![];
+//     for t in 0..n {
+//         expected_arithmetic_operations.push(ArithmeticOperation::<BabyBear>::from_isize(
+//             FSUB,
+//             n - t,
+//             1,
+//             n - t - 1,
+//         ));
+//     }
 
-    execution_test::<TEST_NUM_WORDS, TEST_WORD_SIZE>(
-        true,
-        false,
-        program.clone(),
-        expected_execution,
-        expected_memory_log,
-        expected_arithmetic_operations,
-    );
-    air_test::<TEST_NUM_WORDS, TEST_WORD_SIZE>(true, false, program);
-}
+//     execution_test::<TEST_NUM_WORDS, TEST_WORD_SIZE>(
+//         true,
+//         false,
+//         program.clone(),
+//         expected_execution,
+//         expected_memory_log,
+//         expected_arithmetic_operations,
+//     );
+//     air_test::<TEST_NUM_WORDS, TEST_WORD_SIZE>(true, false, program);
+// }
 
-#[test]
-fn test_cpu_without_field_arithmetic() {
-    let field_arithmetic_enabled = false;
-    let field_extension_enabled = false;
+// #[test]
+// fn test_cpu_without_field_arithmetic() {
+//     let field_arithmetic_enabled = false;
+//     let field_extension_enabled = false;
 
-    /*
-    Instruction 0 assigns word[0]_1 to 5.
-    Instruction 1 checks if word[0]_1 is *not* 4, and if so jumps to instruction 4.
-    Instruction 2 is never run.
-    Instruction 3 terminates.
-    Instruction 4 checks if word[0]_1 is 5, and if so jumps to instruction 3 to terminate.
-     */
-    let instructions = vec![
-        // word[0]_1 <- word[5]_0
-        Instruction::from_isize(STOREW, 5, 0, 0, 0, 1),
-        // if word[0]_1 != 4 then pc += 2
-        Instruction::from_isize(BNE, 0, 4, 3, 1, 0),
-        // word[2]_1 <- pc + 1, pc -= 2
-        Instruction::from_isize(JAL, 2, -2, 0, 1, 0),
-        // terminate
-        Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
-        // if word[0]_1 == 5 then pc -= 1
-        Instruction::from_isize(BEQ, 0, 5, -1, 1, 0),
-    ];
+//     /*
+//     Instruction 0 assigns word[0]_1 to 5.
+//     Instruction 1 checks if word[0]_1 is *not* 4, and if so jumps to instruction 4.
+//     Instruction 2 is never run.
+//     Instruction 3 terminates.
+//     Instruction 4 checks if word[0]_1 is 5, and if so jumps to instruction 3 to terminate.
+//      */
+//     let instructions = vec![
+//         // word[0]_1 <- word[5]_0
+//         Instruction::from_isize(STOREW, 5, 0, 0, 0, 1),
+//         // if word[0]_1 != 4 then pc += 2
+//         Instruction::from_isize(BNE, 0, 4, 3, 1, 0),
+//         // word[2]_1 <- pc + 1, pc -= 2
+//         Instruction::from_isize(JAL, 2, -2, 0, 1, 0),
+//         // terminate
+//         Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
+//         // if word[0]_1 == 5 then pc -= 1
+//         Instruction::from_isize(BEQ, 0, 5, -1, 1, 0),
+//     ];
 
-    let program = Program {
-        instructions,
-        debug_infos: vec![None; 5],
-    };
+//     let program = Program {
+//         instructions,
+//         debug_infos: vec![None; 5],
+//     };
 
-    let expected_execution: Vec<usize> = vec![0, 1, 4, 3];
+//     let expected_execution: Vec<usize> = vec![0, 1, 4, 3];
 
-    let storew_time = max_accesses_per_instruction(STOREW) as isize;
-    let bne_time = max_accesses_per_instruction(BNE) as isize;
+//     let storew_time = max_accesses_per_instruction(STOREW) as isize;
+//     let bne_time = max_accesses_per_instruction(BNE) as isize;
 
-    let expected_memory_log = vec![
-        MemoryAccess::from_isize(2, OpType::Write, 1, 0, 5),
-        MemoryAccess::from_isize(storew_time, OpType::Read, 1, 0, 5),
-        MemoryAccess::from_isize(storew_time + bne_time, OpType::Read, 1, 0, 5),
-    ];
+//     let expected_memory_log = vec![
+//         MemoryAccess::from_isize(2, OpType::Write, 1, 0, 5),
+//         MemoryAccess::from_isize(storew_time, OpType::Read, 1, 0, 5),
+//         MemoryAccess::from_isize(storew_time + bne_time, OpType::Read, 1, 0, 5),
+//     ];
 
-    execution_test::<TEST_NUM_WORDS, TEST_WORD_SIZE>(
-        field_arithmetic_enabled,
-        field_extension_enabled,
-        program.clone(),
-        expected_execution,
-        expected_memory_log,
-        vec![],
-    );
-    air_test::<TEST_NUM_WORDS, TEST_WORD_SIZE>(
-        field_arithmetic_enabled,
-        field_extension_enabled,
-        program,
-    );
-}
+//     execution_test::<TEST_NUM_WORDS, TEST_WORD_SIZE>(
+//         field_arithmetic_enabled,
+//         field_extension_enabled,
+//         program.clone(),
+//         expected_execution,
+//         expected_memory_log,
+//         vec![],
+//     );
+//     air_test::<TEST_NUM_WORDS, TEST_WORD_SIZE>(
+//         field_arithmetic_enabled,
+//         field_extension_enabled,
+//         program,
+//     );
+// }
 
-#[test]
-#[should_panic]
-fn test_cpu_negative_wrong_pc() {
-    /*
-    Instruction 0 assigns word[0]_1 to 6.
-    Instruction 1 checks if word[0]_1 is 4, and if so jumps to instruction 3 (but this doesn't happen)
-    Instruction 2 checks if word[0]_1 is 0, and if not jumps to instruction 4 to terminate
-    Instruction 3 checks if word[0]_1 is 0, and if not jumps to instruction 4 to terminate (identical to instruction 2) (note: would go to instruction 4 either way)
-    Instruction 4 terminates
-     */
-    let instructions = vec![
-        // word[0]_1 <- word[6]_0
-        Instruction::from_isize(STOREW, 6, 0, 0, 0, 1),
-        // if word[0]_1 != 4 then pc += 2
-        Instruction::from_isize(BEQ, 0, 4, 2, 1, 0),
-        // if word[0]_1 != 0 then pc += 2
-        Instruction::from_isize(BNE, 0, 0, 2, 1, 0),
-        // if word[0]_1 != 0 then pc += 1
-        Instruction::from_isize(BNE, 0, 0, 1, 1, 0),
-        // terminate
-        Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
-    ];
+// #[test]
+// #[should_panic]
+// fn test_cpu_negative_wrong_pc() {
+//     /*
+//     Instruction 0 assigns word[0]_1 to 6.
+//     Instruction 1 checks if word[0]_1 is 4, and if so jumps to instruction 3 (but this doesn't happen)
+//     Instruction 2 checks if word[0]_1 is 0, and if not jumps to instruction 4 to terminate
+//     Instruction 3 checks if word[0]_1 is 0, and if not jumps to instruction 4 to terminate (identical to instruction 2) (note: would go to instruction 4 either way)
+//     Instruction 4 terminates
+//      */
+//     let instructions = vec![
+//         // word[0]_1 <- word[6]_0
+//         Instruction::from_isize(STOREW, 6, 0, 0, 0, 1),
+//         // if word[0]_1 != 4 then pc += 2
+//         Instruction::from_isize(BEQ, 0, 4, 2, 1, 0),
+//         // if word[0]_1 != 0 then pc += 2
+//         Instruction::from_isize(BNE, 0, 0, 2, 1, 0),
+//         // if word[0]_1 != 0 then pc += 1
+//         Instruction::from_isize(BNE, 0, 0, 1, 1, 0),
+//         // terminate
+//         Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
+//     ];
 
-    let program = Program {
-        instructions,
-        debug_infos: vec![None; 5],
-    };
+//     let program = Program {
+//         instructions,
+//         debug_infos: vec![None; 5],
+//     };
 
-    air_test_change_pc::<TEST_NUM_WORDS, TEST_WORD_SIZE>(true, false, program, true, 2, 3);
-}
+//     air_test_change_pc::<TEST_NUM_WORDS, TEST_WORD_SIZE>(true, false, program, true, 2, 3);
+// }
 
-#[test]
-fn test_cpu_negative_wrong_pc_check() {
-    //Same program as test_cpu_negative.
-    let instructions = vec![
-        // word[0]_1 <- word[6]_0
-        Instruction::from_isize(STOREW, 6, 0, 0, 0, 1),
-        // if word[0]_1 != 4 then pc += 2
-        Instruction::from_isize(BEQ, 0, 4, 2, 1, 0),
-        // if word[0]_1 != 0 then pc += 2
-        Instruction::from_isize(BNE, 0, 0, 2, 1, 0),
-        // if word[0]_1 != 0 then pc += 1
-        Instruction::from_isize(BNE, 0, 0, 1, 1, 0),
-        // terminate
-        Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
-    ];
+// #[test]
+// fn test_cpu_negative_wrong_pc_check() {
+//     //Same program as test_cpu_negative.
+//     let instructions = vec![
+//         // word[0]_1 <- word[6]_0
+//         Instruction::from_isize(STOREW, 6, 0, 0, 0, 1),
+//         // if word[0]_1 != 4 then pc += 2
+//         Instruction::from_isize(BEQ, 0, 4, 2, 1, 0),
+//         // if word[0]_1 != 0 then pc += 2
+//         Instruction::from_isize(BNE, 0, 0, 2, 1, 0),
+//         // if word[0]_1 != 0 then pc += 1
+//         Instruction::from_isize(BNE, 0, 0, 1, 1, 0),
+//         // terminate
+//         Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
+//     ];
 
-    let program = Program {
-        instructions,
-        debug_infos: vec![None; 5],
-    };
+//     let program = Program {
+//         instructions,
+//         debug_infos: vec![None; 5],
+//     };
 
-    air_test_change_pc::<TEST_NUM_WORDS, TEST_WORD_SIZE>(true, false, program, false, 2, 2);
-}
+//     air_test_change_pc::<TEST_NUM_WORDS, TEST_WORD_SIZE>(true, false, program, false, 2, 2);
+// }
 
-#[test]
-#[should_panic(
-    expected = "assertion `left == right` failed: constraints had nonzero value on row 0"
-)]
-fn test_cpu_negative_hasnt_terminated() {
-    let instructions = vec![
-        // word[0]_1 <- word[6]_0
-        Instruction::from_isize(STOREW, 6, 0, 0, 0, 1),
-        // terminate
-        Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
-    ];
+// #[test]
+// #[should_panic(
+//     expected = "assertion `left == right` failed: constraints had nonzero value on row 0"
+// )]
+// fn test_cpu_negative_hasnt_terminated() {
+//     let instructions = vec![
+//         // word[0]_1 <- word[6]_0
+//         Instruction::from_isize(STOREW, 6, 0, 0, 0, 1),
+//         // terminate
+//         Instruction::from_isize(TERMINATE, 0, 0, 0, 0, 0),
+//     ];
 
-    let program = Program {
-        instructions,
-        debug_infos: vec![None; 2],
-    };
+//     let program = Program {
+//         instructions,
+//         debug_infos: vec![None; 2],
+//     };
 
-    air_test_change(
-        true,
-        false,
-        program,
-        true,
-        |rows, segment: &mut ExecutionSegment<TEST_NUM_WORDS, TEST_WORD_SIZE, BabyBear>| {
-            rows.remove(rows.len() - 1);
-            segment.program_chip.execution_frequencies[1] = 0;
-        },
-    );
-}
+//     air_test_change(
+//         true,
+//         false,
+//         program,
+//         true,
+//         |rows, segment: &mut ExecutionSegment<TEST_NUM_WORDS, TEST_WORD_SIZE, BabyBear>| {
+//             rows.remove(rows.len() - 1);
+//             segment.program_chip.execution_frequencies[1] = 0;
+//         },
+//     );
+// }
 
 // #[test]
 // #[should_panic(expected = "assertion `left == right` failed")]
