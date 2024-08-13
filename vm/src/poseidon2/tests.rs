@@ -60,7 +60,7 @@ fn run_perm_ops(
     instructions: Vec<Instruction<BabyBear>>,
     data: Vec<[BabyBear; WIDTH]>,
 ) -> (
-    VirtualMachine<1, BabyBear>,
+    VirtualMachine<1, 1, BabyBear>,
     BabyBearPoseidon2Engine,
     DummyInteractionAir,
     DummyInteractionAir,
@@ -76,7 +76,7 @@ fn run_perm_ops(
     };
 
     // default VM with poseidon2 enabled
-    let mut vm = VirtualMachine::<1, BabyBear>::new(
+    let mut vm = VirtualMachine::<1, 1, BabyBear>::new(
         VmConfig {
             field_arithmetic_enabled: true,
             field_extension_enabled: false,

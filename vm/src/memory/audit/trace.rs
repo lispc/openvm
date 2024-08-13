@@ -6,7 +6,9 @@ use p3_matrix::dense::RowMajorMatrix;
 
 use super::MemoryAuditChip;
 use crate::memory::{
-    audit::columns::AuditCols, interface::AccessCell, manager::NewMemoryAccessCols, OpType,
+    audit::columns::AuditCols,
+    manager::{access::NewMemoryAccessCols, AccessCell},
+    OpType,
 };
 
 impl<const WORD_SIZE: usize, F: PrimeField32> MemoryAuditChip<WORD_SIZE, F> {

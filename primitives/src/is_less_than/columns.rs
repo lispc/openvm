@@ -28,7 +28,7 @@ impl<T: Clone> IsLessThanIoCols<T> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IsLessThanAuxCols<T> {
     pub lower: T,
     // lower_decomp consists of lower decomposed into limbs of size decomp where we also shift

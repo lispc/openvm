@@ -4,7 +4,7 @@ use afs_primitives::is_less_than_tuple::columns::IsLessThanTupleAuxCols;
 use derive_new::new;
 
 use super::air::MemoryAuditAir;
-use crate::memory::manager::NewMemoryAccessCols;
+use crate::memory::manager::access::NewMemoryAccessCols;
 
 #[allow(clippy::too_many_arguments)]
 #[derive(new)]

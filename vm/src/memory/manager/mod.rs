@@ -1,19 +1,17 @@
 use std::{collections::HashMap, sync::Arc};
 
 use afs_primitives::range_gate::RangeCheckerGateChip;
+use afs_stark_backend::rap::AnyRap;
 use p3_field::{Field, PrimeField32};
 use p3_matrix::dense::RowMajorMatrix;
 
 use self::{access::NewMemoryAccessCols, dimensions::MemoryDimensions, interface::MemoryInterface};
-use super::{audit::MemoryAuditChip, interface::MemoryExpandChip};
+use super::{audit::MemoryAuditChip, expand_interface::MemoryExpandInterfaceChip};
 use crate::memory::{decompose, OpType};
 
 pub mod access;
 pub mod dimensions;
 pub mod interface;
-
-#[cfg(test)]
-mod tests;
 
 #[derive(Copy, Clone)]
 pub struct AccessCell<const WORD_SIZE: usize, F: Field> {
@@ -24,7 +22,6 @@ pub struct AccessCell<const WORD_SIZE: usize, F: Field> {
 pub struct MemoryManager<const NUM_WORDS: usize, const WORD_SIZE: usize, F: PrimeField32> {
     pub interface_chip: MemoryInterface<NUM_WORDS, WORD_SIZE, F>,
     /// Maps (addr_space, pointer) to (data, timestamp)
-    // TODO[osama]: this shouldn't always start as empty in the case of continuations
     memory: HashMap<(F, F), AccessCell<WORD_SIZE, F>>,
 }
 
@@ -36,7 +33,9 @@ impl<const NUM_WORDS: usize, const WORD_SIZE: usize, F: PrimeField32>
         memory: HashMap<(F, F), AccessCell<WORD_SIZE, F>>,
     ) -> Self {
         Self {
-            interface_chip: MemoryInterface::Persistent(MemoryExpandChip::new(memory_dimensions)),
+            interface_chip: MemoryInterface::Persistent(MemoryExpandInterfaceChip::new(
+                memory_dimensions,
+            )),
             memory,
         }
     }

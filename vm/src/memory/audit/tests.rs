@@ -13,7 +13,7 @@ use rand::Rng;
 
 use crate::{
     cpu::RANGE_CHECKER_BUS,
-    memory::{audit::MemoryAuditChip, interface::AccessCell},
+    memory::{audit::MemoryAuditChip, manager::AccessCell},
 };
 
 type Val = BabyBear;
