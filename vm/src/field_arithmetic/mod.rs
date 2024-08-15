@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use p3_field::Field;
 
-use crate::cpu::{trace::isize_to_field, OpCode};
+use crate::{arch::instructions::OpCode, cpu::trace::isize_to_field};
 
 #[cfg(test)]
 pub mod tests;

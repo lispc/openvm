@@ -1,7 +1,8 @@
 use p3_field::{Field, PrimeField32};
 
 use crate::{
-    cpu::{trace::Instruction, OpCode, FIELD_EXTENSION_INSTRUCTIONS},
+    arch::instructions::{FIELD_EXTENSION_INSTRUCTIONS, OpCode},
+    cpu::trace::Instruction,
     vm::ExecutionSegment,
 };
 

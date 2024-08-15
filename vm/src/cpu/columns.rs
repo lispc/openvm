@@ -1,14 +1,19 @@
 use std::{array::from_fn, collections::BTreeMap};
 
+use itertools::Itertools;
+use p3_field::{Field, PrimeField32};
+
 use afs_primitives::{
     is_equal_vec::{columns::IsEqualVecAuxCols, IsEqualVecAir},
     sub_chip::LocalTraceInstructions,
 };
-use itertools::Itertools;
-use p3_field::{Field, PrimeField32, PrimeField64};
 
-use super::{trace::disabled_memory_cols, CpuAir, CpuOptions, OpCode, CPU_MAX_ACCESSES_PER_CYCLE};
-use crate::{memory::offline_checker::columns::MemoryOfflineCheckerCols, vm::ExecutionSegment};
+use crate::{
+    arch::instructions::OpCode, memory::offline_checker::columns::MemoryOfflineCheckerCols,
+    vm::ExecutionSegment,
+};
+
+use super::{CPU_MAX_ACCESSES_PER_CYCLE, CpuAir, CpuOptions};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CpuIoCols<T> {

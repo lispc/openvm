@@ -1,12 +1,14 @@
 use std::array;
 
+use p3_field::PrimeField32;
+
 use afs_primitives::sub_chip::LocalTraceInstructions;
 use columns::*;
-use p3_field::PrimeField32;
 use poseidon2_air::poseidon2::{Poseidon2Air, Poseidon2Config};
 
 use crate::{
-    cpu::{trace::Instruction, OpCode, OpCode::*},
+    arch::instructions::{OpCode, OpCode::*},
+    cpu::trace::Instruction,
     memory::tree::Hasher,
     vm::ExecutionSegment,
 };

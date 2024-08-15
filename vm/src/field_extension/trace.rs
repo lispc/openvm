@@ -1,6 +1,8 @@
 use p3_field::{Field, PrimeField32};
 use p3_matrix::dense::RowMajorMatrix;
 
+use crate::arch::instructions::OpCode;
+
 use super::{
     columns::{
         FieldExtensionArithmeticAuxCols, FieldExtensionArithmeticCols,
@@ -8,7 +10,6 @@ use super::{
     },
     FieldExtensionArithmeticAir, FieldExtensionArithmeticChip, FieldExtensionArithmeticOperation,
 };
-use crate::cpu::OpCode;
 
 /// Constructs a new set of columns (including auxiliary columns) given inputs.
 fn generate_cols<T: Field>(

@@ -1,18 +1,20 @@
-use afs_stark_backend::{prover::USE_DEBUG_BUILDER, verifier::VerificationError};
-use afs_test_utils::{
-    config::baby_bear_poseidon2::run_simple_test_no_pis,
-    interaction::dummy_interaction_air::DummyInteractionAir, utils::create_seeded_rng,
-};
 use p3_baby_bear::BabyBear;
 use p3_field::AbstractField;
 use p3_matrix::dense::RowMajorMatrix;
 use rand::Rng;
 
+use afs_stark_backend::{prover::USE_DEBUG_BUILDER, verifier::VerificationError};
+use afs_test_utils::{
+    config::baby_bear_poseidon2::run_simple_test_no_pis,
+    interaction::dummy_interaction_air::DummyInteractionAir, utils::create_seeded_rng,
+};
+
+use crate::arch::instructions::{FIELD_ARITHMETIC_INSTRUCTIONS, OpCode, OpCode::FDIV};
+
 use super::{
     columns::{FieldArithmeticCols, FieldArithmeticIoCols},
     FieldArithmeticAir, FieldArithmeticChip,
 };
-use crate::cpu::{OpCode, OpCode::FDIV, FIELD_ARITHMETIC_INSTRUCTIONS};
 
 /// Function for testing that generates a random program consisting only of field arithmetic operations.
 fn generate_arith_program(chip: &mut FieldArithmeticChip<BabyBear>, len_ops: usize) {

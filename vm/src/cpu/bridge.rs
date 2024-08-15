@@ -1,17 +1,21 @@
 use std::collections::BTreeMap;
 
-use afs_stark_backend::interaction::InteractionBuilder;
 use p3_field::AbstractField;
 
-use super::{
-    columns::{CpuIoCols, MemoryAccessCols},
-    CpuAir, OpCode, ARITHMETIC_BUS, CPU_MAX_ACCESSES_PER_CYCLE, CPU_MAX_READS_PER_CYCLE,
-    FIELD_ARITHMETIC_INSTRUCTIONS, FIELD_EXTENSION_BUS, FIELD_EXTENSION_INSTRUCTIONS, MEMORY_BUS,
-    POSEIDON2_BUS, READ_INSTRUCTION_BUS,
-};
+use afs_stark_backend::interaction::InteractionBuilder;
+
 use crate::{
-    cpu::OpCode::{COMP_POS2, PERM_POS2},
+    arch::instructions::{
+        FIELD_ARITHMETIC_INSTRUCTIONS,
+        FIELD_EXTENSION_INSTRUCTIONS,
+        OpCode, OpCode::{COMP_POS2, PERM_POS2},
+    },
     memory::offline_checker::columns::MemoryOfflineCheckerCols,
+};
+
+use super::{
+    ARITHMETIC_BUS, columns::CpuIoCols, CPU_MAX_ACCESSES_PER_CYCLE, CPU_MAX_READS_PER_CYCLE,
+    CpuAir, FIELD_EXTENSION_BUS, POSEIDON2_BUS, READ_INSTRUCTION_BUS,
 };
 
 impl<const WORD_SIZE: usize> CpuAir<WORD_SIZE> {

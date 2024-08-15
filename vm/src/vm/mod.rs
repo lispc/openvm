@@ -3,25 +3,25 @@ use std::{
     ops::Deref,
 };
 
-use afs_stark_backend::rap::AnyRap;
-use afs_test_utils::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
 use p3_baby_bear::BabyBear;
 use p3_field::PrimeField32;
 use p3_matrix::{dense::DenseMatrix, Matrix};
 use p3_util::log2_strict_usize;
 
+use afs_stark_backend::rap::AnyRap;
+use afs_test_utils::config::baby_bear_poseidon2::BabyBearPoseidon2Config;
+pub use segment::{ExecutionSegment, get_chips};
+
 use crate::{cpu::ExecutionState, program::Program};
-
-mod segment;
-pub use segment::{get_chips, ExecutionSegment};
-
-use crate::cpu::{trace::ExecutionError, CpuOptions};
-
-pub mod cycle_tracker;
+use crate::cpu::{CpuOptions, trace::ExecutionError};
 
 use self::config::VmConfig;
 
+mod segment;
+pub mod cycle_tracker;
+
 pub mod config;
+mod new_segment;
 
 /// Parent struct that holds all execution segments, program, config.
 ///

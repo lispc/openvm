@@ -1,37 +1,36 @@
 use core::array::from_fn;
 
+use itertools::Itertools;
+use p3_baby_bear::BabyBear;
+use p3_field::AbstractField;
+use p3_matrix::{dense::RowMajorMatrix, Matrix};
+use p3_util::log2_strict_usize;
+use rand::{Rng, RngCore};
+
 use afs_stark_backend::{prover::USE_DEBUG_BUILDER, verifier::VerificationError};
 use afs_test_utils::{
     config::{
-        baby_bear_poseidon2::{engine_from_perm, random_perm, BabyBearPoseidon2Engine},
+        baby_bear_poseidon2::{BabyBearPoseidon2Engine, engine_from_perm, random_perm},
         fri_params::fri_params_with_80_bits_of_security,
     },
     engine::StarkEngine,
     interaction::dummy_interaction_air::DummyInteractionAir,
     utils::create_seeded_rng,
 };
-use itertools::Itertools;
-use p3_baby_bear::BabyBear;
-use p3_field::AbstractField;
-use p3_matrix::{dense::RowMajorMatrix, Matrix};
-use p3_util::log2_strict_usize;
 use poseidon2_air::poseidon2::Poseidon2Config;
-use rand::{Rng, RngCore};
 
-use super::{Poseidon2Chip, Poseidon2VmAir, CHUNK, WIDTH};
 use crate::{
-    cpu::{
-        trace::Instruction,
-        OpCode::{COMP_POS2, PERM_POS2},
-        MEMORY_BUS, POSEIDON2_BUS, POSEIDON2_DIRECT_BUS,
-    },
+    arch::instructions::OpCode::{COMP_POS2, PERM_POS2},
+    cpu::{MEMORY_BUS, POSEIDON2_BUS, POSEIDON2_DIRECT_BUS, trace::Instruction},
     memory::tree::Hasher,
     program::Program,
     vm::{
-        config::{VmConfig, DEFAULT_MAX_SEGMENT_LEN},
+        config::{DEFAULT_MAX_SEGMENT_LEN, VmConfig},
         VirtualMachine,
     },
 };
+
+use super::{CHUNK, Poseidon2Chip, Poseidon2VmAir, WIDTH};
 
 const WORD_SIZE: usize = 1;
 const LIMB_BITS: usize = 24;

@@ -1,11 +1,12 @@
 use p3_field::Field;
 use p3_matrix::dense::RowMajorMatrix;
 
+use crate::arch::instructions::OpCode;
+
 use super::{
     columns::{FieldArithmeticAuxCols, FieldArithmeticCols, FieldArithmeticIoCols},
     FieldArithmeticAir, FieldArithmeticChip,
 };
-use crate::cpu::OpCode;
 
 /// Constructs a new set of columns (including auxiliary columns) given inputs.
 fn generate_cols<T: Field>(op: OpCode, x: T, y: T) -> FieldArithmeticCols<T> {

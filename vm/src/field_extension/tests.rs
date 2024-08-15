@@ -1,18 +1,23 @@
 use std::ops::{Add, Div, Mul, Sub};
 
+use p3_baby_bear::BabyBear;
+use p3_field::{AbstractExtensionField, AbstractField, extension::BinomialExtensionField};
+use rand::Rng;
+
 use afs_stark_backend::{prover::USE_DEBUG_BUILDER, verifier::VerificationError};
 use afs_test_utils::{
     config::baby_bear_poseidon2::run_simple_test_no_pis, utils::create_seeded_rng,
 };
-use p3_baby_bear::BabyBear;
-use p3_field::{extension::BinomialExtensionField, AbstractExtensionField, AbstractField};
-use rand::Rng;
+
+use crate::{
+    arch::instructions::{FIELD_EXTENSION_INSTRUCTIONS, OpCode},
+    cpu::WORD_SIZE,
+};
 
 use super::{
     columns::FieldExtensionArithmeticIoCols, FieldExtensionArithmeticAir,
     FieldExtensionArithmeticChip, FieldExtensionArithmeticOperation,
 };
-use crate::cpu::{OpCode, FIELD_EXTENSION_INSTRUCTIONS, WORD_SIZE};
 
 /// Function for testing that generates a random program consisting only of field arithmetic operations.
 fn generate_field_extension_operations(

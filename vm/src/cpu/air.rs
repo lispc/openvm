@@ -1,19 +1,20 @@
 use std::borrow::Borrow;
 
+use p3_air::{Air, AirBuilder, AirBuilderWithPublicValues, BaseAir};
+use p3_field::{AbstractField, Field};
+use p3_matrix::Matrix;
+
 use afs_primitives::{
     is_equal_vec::{columns::IsEqualVecIoCols, IsEqualVecAir},
     sub_chip::SubAir,
 };
 use afs_stark_backend::interaction::InteractionBuilder;
-use p3_air::{Air, AirBuilder, AirBuilderWithPublicValues, BaseAir};
-use p3_field::{AbstractField, Field};
-use p3_matrix::Matrix;
+
+use crate::arch::instructions::{FIELD_ARITHMETIC_INSTRUCTIONS, OpCode::*};
 
 use super::{
     columns::{CpuAuxCols, CpuCols, CpuIoCols},
-    max_accesses_per_instruction, CpuAir,
-    OpCode::*,
-    CPU_MAX_READS_PER_CYCLE, FIELD_ARITHMETIC_INSTRUCTIONS, INST_WIDTH,
+    CPU_MAX_READS_PER_CYCLE, CpuAir, INST_WIDTH, max_accesses_per_instruction,
 };
 
 impl<const WORD_SIZE: usize, F: Field> BaseAir<F> for CpuAir<WORD_SIZE> {

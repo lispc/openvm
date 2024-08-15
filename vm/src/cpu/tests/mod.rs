@@ -1,8 +1,3 @@
-use afs_stark_backend::{rap::AnyRap, verifier::VerificationError};
-use afs_test_utils::{
-    config::baby_bear_poseidon2::{run_simple_test, BabyBearPoseidon2Config},
-    interaction::dummy_interaction_air::DummyInteractionAir,
-};
 use p3_baby_bear::BabyBear;
 use p3_field::{AbstractField, PrimeField64};
 use p3_matrix::{
@@ -10,24 +5,28 @@ use p3_matrix::{
     Matrix,
 };
 
-use super::{
-    trace::{isize_to_field, Instruction},
-    OpCode::*,
-    ARITHMETIC_BUS, MEMORY_BUS, READ_INSTRUCTION_BUS,
+use afs_stark_backend::{rap::AnyRap, verifier::VerificationError};
+use afs_test_utils::{
+    config::baby_bear_poseidon2::{BabyBearPoseidon2Config, run_simple_test},
+    interaction::dummy_interaction_air::DummyInteractionAir,
 };
+
 use crate::{
+    arch::instructions::OpCode::*,
     cpu::{
         columns::{CpuCols, CpuIoCols},
-        max_accesses_per_instruction, CpuAir, CpuChip, CpuOptions,
+        CpuAir, CpuChip, CpuOptions,
     },
     field_arithmetic::ArithmeticOperation,
     memory::{decompose, manager::interface::MemoryInterface, MemoryAccess, OpType},
     program::Program,
     vm::{
-        config::{VmConfig, DEFAULT_MAX_SEGMENT_LEN},
+        config::{DEFAULT_MAX_SEGMENT_LEN, VmConfig},
         ExecutionSegment, VirtualMachine,
     },
 };
+
+use super::{ARITHMETIC_BUS, READ_INSTRUCTION_BUS, trace::isize_to_field};
 
 const TEST_NUM_WORDS: usize = 1;
 const TEST_WORD_SIZE: usize = 1;
