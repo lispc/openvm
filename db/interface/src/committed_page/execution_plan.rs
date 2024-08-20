@@ -10,7 +10,7 @@ use datafusion::{
     },
 };
 
-use super::utils::convert_to_record_batch;
+use super::utils::page_to_record_batch;
 
 pub struct CommittedPageExec {
     pub page: Page,
@@ -62,7 +62,7 @@ impl ExecutionPlan for CommittedPageExec {
         _partition: usize,
         _context: std::sync::Arc<datafusion::execution::TaskContext>,
     ) -> datafusion::error::Result<datafusion::execution::SendableRecordBatchStream> {
-        let record_batch = convert_to_record_batch(self.page.clone(), self.schema.clone());
+        let record_batch = page_to_record_batch(self.page.clone(), self.schema.clone());
         // let committed_page = self.committed_page.clone();
         // let schema = self.committed_page.schema.clone();
         // let record_batch: RecordBatch = committed_page.to_record_batch();

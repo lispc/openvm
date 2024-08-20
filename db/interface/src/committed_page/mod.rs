@@ -12,8 +12,8 @@ use p3_field::PrimeField64;
 use p3_uni_stark::Domain;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use self::utils::convert_to_record_batch;
-use crate::NUM_IDX_COLS;
+use self::utils::{page_to_record_batch, record_batch_to_page};
+use crate::{utils::data_types::num_fe, NUM_IDX_COLS};
 
 pub mod column;
 pub mod execution_plan;
@@ -65,38 +65,7 @@ where
 
     pub fn from_record_batch(rb: RecordBatch, height: usize) -> Self {
         let schema = (*rb.schema()).clone();
-        let num_rows = rb.num_rows();
-        let columns = rb.columns();
-
-        // Initialize a vector to hold each row, with an extra column for `is_alloc`
-        let mut rows: Vec<Vec<u32>> = vec![vec![0; columns.len() + 1]; num_rows];
-        let zero_rows: Vec<Vec<u32>> = vec![vec![0; columns.len() + 1]; height - num_rows];
-
-        // Iterate over columns and fill the rows
-        for (col_idx, column) in columns.iter().enumerate() {
-            // TODO: handle other data types
-            let array = match column.data_type() {
-                DataType::UInt32 => column.as_any().downcast_ref::<UInt32Array>().unwrap(),
-                DataType::Int64 => {
-                    let array = column.as_any().downcast_ref::<Int64Array>().unwrap();
-                    let array = array
-                        .values()
-                        .iter()
-                        .map(|&v| v as u32)
-                        .collect::<Vec<u32>>();
-                    &UInt32Array::from(array)
-                }
-                _ => panic!("Unsupported data type: {}", column.data_type()),
-            };
-            for (row_idx, row) in rows.iter_mut().enumerate() {
-                row[0] = 1;
-                row[col_idx + 1] = array.value(row_idx);
-            }
-        }
-        rows.extend(zero_rows);
-
-        // TODO: we will temporarily take the first row as the index and all other rows as the data fields
-        let page = Page::from_2d_vec(&rows, NUM_IDX_COLS, columns.len() - NUM_IDX_COLS);
+        let page = record_batch_to_page(&rb, height);
         Self {
             // TODO: generate a page_id based on the hash of the Page
             page_id: "".to_string(),
@@ -107,7 +76,7 @@ where
     }
 
     pub fn to_record_batch(&self) -> RecordBatch {
-        convert_to_record_batch(self.page.clone(), self.schema.clone())
+        page_to_record_batch(self.page.clone(), self.schema.clone())
     }
 
     pub fn write_cached_trace(&mut self, trace: ProverTraceData<SC>) {

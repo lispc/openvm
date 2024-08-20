@@ -9,10 +9,10 @@ use datafusion::{arrow::datatypes::Schema, execution::context::SessionContext};
 // pub fn gen_schema() {
 //     use datafusion::arrow::datatypes::{DataType, Field};
 //     let fields = vec![
-//         Field::new("a", DataType::UInt32, false),
-//         Field::new("b", DataType::UInt32, false),
-//         Field::new("c", DataType::UInt32, false),
-//         Field::new("d", DataType::UInt32, false),
+//         Field::new("a", DataType::UInt16, false),
+//         Field::new("b", DataType::UInt16, false),
+//         Field::new("c", DataType::UInt16, false),
+//         Field::new("d", DataType::UInt16, false),
 //     ];
 //     let schema = Schema::new(fields);
 //     let serialized_schema = bincode::serialize(&schema).unwrap();
@@ -100,6 +100,11 @@ pub async fn test_basic_e2e() {
     println!("Output page: {:?}", output.page);
 
     afs.keygen().await.unwrap();
+    println!("Keygen completed");
+
     afs.prove().await.unwrap();
+    println!("STARK proof generated");
+
     afs.verify().await.unwrap();
+    println!("STARK proof verified");
 }
