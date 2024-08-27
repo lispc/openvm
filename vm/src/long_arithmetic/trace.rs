@@ -1,156 +1,135 @@
-use p3_field::{Field, PrimeField32};
+use std::vec::IntoIter;
+
+use p3_field::PrimeField32;
 use p3_matrix::dense::RowMajorMatrix;
 
 use super::{
     columns::{LongArithmeticAuxCols, LongArithmeticCols, LongArithmeticIoCols},
-    num_limbs, LongArithmeticChip, LongArithmeticOperation,
+    num_limbs, CalculationResult, LongArithmeticChip, LongArithmeticInstruction,
+    LongArithmeticOperation,
 };
-use crate::arch::instructions::Opcode;
+use crate::{
+    arch::{columns::ExecutionState, instructions::Opcode},
+    memory::{
+        manager::trace_builder::MemoryTraceBuilder,
+        offline_checker::columns::MemoryOfflineCheckerAuxCols, OpType,
+    },
+};
 
-pub fn create_row_from_values<const ARG_SIZE: usize, const LIMB_SIZE: usize, T: Field>(
-    opcode: Opcode,
-    x: &[u32],
-    y: &[u32],
-    result_limbs: &[u32],
-    buffer_limbs: &[u32],
-    cmp_result: bool,
-) -> Vec<T> {
-    LongArithmeticCols::<ARG_SIZE, LIMB_SIZE, T> {
+pub fn create_row_from_operation<const ARG_SIZE: usize, const LIMB_SIZE: usize, F: PrimeField32>(
+    operation: &LongArithmeticOperation<F>,
+    is_valid: bool,
+    oc_aux_iter: &mut IntoIter<MemoryOfflineCheckerAuxCols<1, F>>,
+) -> Vec<F> {
+    LongArithmeticCols::<ARG_SIZE, LIMB_SIZE, F> {
         io: LongArithmeticIoCols {
-            rcv_count: T::one(),
-            opcode: T::from_canonical_u8(opcode as u8),
-            x_limbs: x.iter().map(|x| T::from_canonical_u32(*x)).collect(),
-            y_limbs: y.iter().map(|x| T::from_canonical_u32(*x)).collect(),
-            z_limbs: result_limbs
+            instruction: operation.instruction.clone(),
+            x_limbs: operation
+                .operand1
                 .iter()
-                .map(|x| T::from_canonical_u32(*x))
+                .map(|x| F::from_canonical_u32(*x))
                 .collect(),
-            cmp_result: T::from_canonical_u8(cmp_result as u8),
+            y_limbs: operation
+                .operand2
+                .iter()
+                .map(|x| F::from_canonical_u32(*x))
+                .collect(),
+            z_limbs: operation
+                .result
+                .result_limbs
+                .iter()
+                .map(|x| F::from_canonical_u32(*x))
+                .collect(),
+            cmp_result: F::from_canonical_u8(operation.result.cmp_result as u8),
         },
         aux: LongArithmeticAuxCols {
-            opcode_add_flag: T::from_canonical_u8((opcode == Opcode::ADD256) as u8),
-            opcode_sub_flag: T::from_canonical_u8((opcode == Opcode::SUB256) as u8),
-            opcode_lt_flag: T::from_canonical_u8((opcode == Opcode::LT256) as u8),
-            opcode_eq_flag: T::from_canonical_u8((opcode == Opcode::EQ256) as u8),
-            buffer: buffer_limbs
+            is_valid: F::from_bool(is_valid),
+            opcode_add_flag: F::from_bool(
+                operation.instruction.opcode.as_canonical_u32() == Opcode::ADD256 as u32,
+            ),
+            opcode_sub_flag: F::from_bool(
+                operation.instruction.opcode.as_canonical_u32() == Opcode::SUB256 as u32,
+            ),
+            opcode_lt_flag: F::from_bool(
+                operation.instruction.opcode.as_canonical_u32() == Opcode::LT256 as u32,
+            ),
+            opcode_eq_flag: F::from_bool(
+                operation.instruction.opcode.as_canonical_u32() == Opcode::EQ256 as u32,
+            ),
+            buffer: operation
+                .result
+                .buffer_limbs
                 .iter()
-                .map(|x| T::from_canonical_u32(*x))
+                .map(|x| F::from_canonical_u32(*x))
+                .collect(),
+            mem_oc_aux_cols: (0..num_limbs::<ARG_SIZE, LIMB_SIZE>())
+                .map(|_| oc_aux_iter.next().unwrap())
                 .collect(),
         },
     }
     .flatten()
 }
 
-struct CalculationResult {
-    result_limbs: Vec<u32>,
-    buffer_limbs: Vec<u32>,
-    cmp_result: bool,
+impl<const ARG_SIZE: usize, const LIMB_SIZE: usize, F: PrimeField32>
+    LongArithmeticChip<ARG_SIZE, LIMB_SIZE, F>
+{
+    fn make_blank_row(&self) -> Vec<F> {
+        let mut trace_builder = MemoryTraceBuilder::new(self.memory_manager.clone());
+
+        let timestamp = self
+            .memory_manager
+            .borrow_mut()
+            .timestamp()
+            .as_canonical_u32() as usize;
+
+        let num_limbs = num_limbs::<ARG_SIZE, LIMB_SIZE>();
+
+        trace_builder.disabled_op(F::from_canonical_usize(num_limbs), OpType::Read);
+        trace_builder.disabled_op(F::from_canonical_usize(num_limbs), OpType::Read);
+        trace_builder.disabled_op(F::from_canonical_usize(num_limbs), OpType::Write);
+        let mut mem_oc_aux_iter = trace_builder.take_accesses_buffer().into_iter();
+
+        create_row_from_operation::<ARG_SIZE, LIMB_SIZE, F>(
+            &LongArithmeticOperation {
+                instruction: LongArithmeticInstruction {
+                    opcode: F::from_canonical_u8(self.air.base_op as u8),
+                    from_state: ExecutionState {
+                        pc: F::zero(),
+                        timestamp: F::from_canonical_usize(timestamp),
+                    },
+                    x_address: Default::default(),
+                    y_address: Default::default(),
+                    z_address: Default::default(),
+                },
+                operand1: vec![0; num_limbs],
+                operand2: vec![0; num_limbs],
+                result: CalculationResult {
+                    result_limbs: vec![0; num_limbs],
+                    buffer_limbs: vec![0; num_limbs],
+                    cmp_result: false,
+                },
+            },
+            false,
+            &mut mem_oc_aux_iter,
+        )
+    }
 }
 
-impl<const ARG_SIZE: usize, const LIMB_SIZE: usize> LongArithmeticChip<ARG_SIZE, LIMB_SIZE> {
-    fn calculate<F: PrimeField32>(opcode: Opcode, x: &[u32], y: &[u32]) -> CalculationResult {
-        match opcode {
-            Opcode::ADD256 => {
-                let (sum, carry) = Self::calc_sum(x, y);
-                CalculationResult {
-                    result_limbs: sum,
-                    buffer_limbs: carry,
-                    cmp_result: false,
-                }
-            }
-            Opcode::SUB256 => {
-                let (diff, carry) = Self::calc_diff(x, y);
-                CalculationResult {
-                    result_limbs: diff,
-                    buffer_limbs: carry,
-                    cmp_result: false,
-                }
-            }
-            Opcode::LT256 => {
-                let (diff, carry) = Self::calc_diff(x, y);
-                let cmp_result = *carry.last().unwrap() == 1;
-                CalculationResult {
-                    result_limbs: diff,
-                    buffer_limbs: carry,
-                    cmp_result,
-                }
-            }
-            Opcode::EQ256 => {
-                let num_limbs = num_limbs::<ARG_SIZE, LIMB_SIZE>();
-                let mut inverse = vec![0u32; num_limbs];
-                for i in 0..num_limbs {
-                    if x[i] != y[i] {
-                        inverse[i] = (F::from_canonical_u32(x[i]) - F::from_canonical_u32(y[i]))
-                            .inverse()
-                            .as_canonical_u32();
-                        break;
-                    }
-                }
-                CalculationResult {
-                    result_limbs: vec![0u32; num_limbs],
-                    buffer_limbs: inverse,
-                    cmp_result: x.iter().zip(y).all(|(x, y)| x == y),
-                }
-            }
-            _ => unreachable!(),
-        }
-    }
+impl<const ARG_SIZE: usize, const LIMB_SIZE: usize, F: PrimeField32>
+    LongArithmeticChip<ARG_SIZE, LIMB_SIZE, F>
+{
+    pub fn generate_trace(&mut self) -> RowMajorMatrix<F> {
+        let accesses = self.memory.take_accesses_buffer();
+        let mut accesses_iter = accesses.into_iter();
 
-    fn calc_sum(x: &[u32], y: &[u32]) -> (Vec<u32>, Vec<u32>) {
-        let num_limbs = num_limbs::<ARG_SIZE, LIMB_SIZE>();
-        let mut result = vec![0u32; num_limbs];
-        let mut carry = vec![0u32; num_limbs];
-        for i in 0..num_limbs {
-            result[i] = x[i] + y[i] + if i > 0 { carry[i - 1] } else { 0 };
-            carry[i] = result[i] >> LIMB_SIZE;
-            result[i] &= (1 << LIMB_SIZE) - 1;
-        }
-        (result, carry)
-    }
-
-    fn calc_diff(x: &[u32], y: &[u32]) -> (Vec<u32>, Vec<u32>) {
-        let num_limbs = num_limbs::<ARG_SIZE, LIMB_SIZE>();
-        let mut result = vec![0u32; num_limbs];
-        let mut carry = vec![0u32; num_limbs];
-        for i in 0..num_limbs {
-            let rhs = y[i] + if i > 0 { carry[i - 1] } else { 0 };
-            if x[i] >= rhs {
-                result[i] = x[i] - rhs;
-                carry[i] = 0;
-            } else {
-                result[i] = x[i] + (1 << LIMB_SIZE) - rhs;
-                carry[i] = 1;
-            }
-        }
-        (result, carry)
-    }
-
-    pub fn generate_trace<F: PrimeField32>(&self) -> RowMajorMatrix<F> {
         let rows = self
             .operations
             .iter()
-            .map(|operation: &LongArithmeticOperation| {
-                let (opcode, x, y) = (operation.opcode, &operation.operand1, &operation.operand2);
-                let CalculationResult {
-                    result_limbs,
-                    buffer_limbs,
-                    cmp_result,
-                } = Self::calculate::<F>(opcode, x, y);
-
-                assert_eq!(ARG_SIZE % LIMB_SIZE, 0);
-
-                if opcode == Opcode::ADD256 || opcode == Opcode::SUB256 || opcode == Opcode::LT256 {
-                    for z in &result_limbs {
-                        self.range_checker_chip.add_count(*z);
-                    }
-                }
-                create_row_from_values::<ARG_SIZE, LIMB_SIZE, F>(
-                    opcode,
-                    x,
-                    y,
-                    &result_limbs,
-                    &buffer_limbs,
-                    cmp_result,
+            .map(|operation| {
+                create_row_from_operation::<ARG_SIZE, LIMB_SIZE, F>(
+                    operation,
+                    true,
+                    &mut accesses_iter,
                 )
             })
             .collect::<Vec<_>>();
@@ -160,13 +139,28 @@ impl<const ARG_SIZE: usize, const LIMB_SIZE: usize> LongArithmeticChip<ARG_SIZE,
 
         let num_limbs = num_limbs::<ARG_SIZE, LIMB_SIZE>();
 
-        let blank_row = create_row_from_values::<ARG_SIZE, LIMB_SIZE, F>(
-            Opcode::ADD256,
-            &vec![0u32; num_limbs],
-            &vec![0u32; num_limbs],
-            &vec![0u32; num_limbs],
-            &vec![0u32; num_limbs],
+        let blank_row = create_row_from_operation::<ARG_SIZE, LIMB_SIZE, F>(
+            &LongArithmeticOperation {
+                instruction: LongArithmeticInstruction {
+                    opcode: F::from_canonical_u8(self.air.base_op as u8),
+                    from_state: ExecutionState {
+                        pc: F::zero(),
+                        timestamp: F::zero(),
+                    },
+                    x_address: Default::default(),
+                    y_address: Default::default(),
+                    z_address: Default::default(),
+                },
+                operand1: vec![0; num_limbs],
+                operand2: vec![0; num_limbs],
+                result: CalculationResult {
+                    result_limbs: vec![0; num_limbs],
+                    buffer_limbs: vec![0; num_limbs],
+                    cmp_result: false,
+                },
+            },
             false,
+            &mut accesses_iter,
         );
         // set rcv_count to 0
         let blank_row = [vec![F::zero()], blank_row[1..].to_vec()].concat();

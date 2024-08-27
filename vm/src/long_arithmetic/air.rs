@@ -7,19 +7,18 @@ use p3_field::{AbstractField, Field};
 use p3_matrix::Matrix;
 
 use super::{columns::LongArithmeticCols, num_limbs};
-use crate::arch::instructions::Opcode;
+use crate::{
+    arch::{bus::ExecutionBus, instructions::Opcode},
+    memory::offline_checker::bridge::MemoryOfflineChecker,
+};
 
 /// AIR for the long addition circuit. ARG_SIZE is the size of the arguments in bits, and LIMB_SIZE is the size of the limbs in bits.
 #[derive(Copy, Clone, Debug)]
 pub struct LongArithmeticAir<const ARG_SIZE: usize, const LIMB_SIZE: usize> {
+    pub(super) execution_bus: ExecutionBus,
+    pub(super) mem_oc: MemoryOfflineChecker,
     pub bus_index: usize, // to communicate with the range checker that checks that all limbs are < 2^LIMB_SIZE
     pub base_op: Opcode,
-}
-
-impl<const ARG_SIZE: usize, const LIMB_SIZE: usize> LongArithmeticAir<ARG_SIZE, LIMB_SIZE> {
-    pub fn new(bus_index: usize, base_op: Opcode) -> Self {
-        Self { bus_index, base_op }
-    }
 }
 
 impl<F: Field, const ARG_SIZE: usize, const LIMB_SIZE: usize> BaseAir<F>
@@ -37,9 +36,12 @@ impl<AB: InteractionBuilder, const ARG_SIZE: usize, const LIMB_SIZE: usize> Air<
         let main = builder.main();
 
         let local = main.row_slice(0);
-        let local = (*local).borrow();
+        let local: &[AB::Var] = (*local).borrow();
 
-        let cols = LongArithmeticCols::<ARG_SIZE, LIMB_SIZE, AB::Var>::from_slice(local);
+        let cols = LongArithmeticCols::<ARG_SIZE, LIMB_SIZE, AB::Var>::from_iter(
+            &mut local.iter().cloned(),
+            self,
+        );
         let (io, aux) = (&cols.io, &cols.aux);
 
         let num_limbs = num_limbs::<ARG_SIZE, LIMB_SIZE>();
@@ -59,7 +61,7 @@ impl<AB: InteractionBuilder, const ARG_SIZE: usize, const LIMB_SIZE: usize> Air<
                 .iter()
                 .zip(flags)
                 .fold(AB::Expr::zero(), |acc, (op, flag)| acc + op.clone() * flag),
-            io.opcode,
+            io.instruction.opcode,
         );
         builder.assert_one(flags.iter().fold(AB::Expr::zero(), |acc, flag| acc + *flag));
 

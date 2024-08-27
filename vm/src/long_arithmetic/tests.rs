@@ -24,8 +24,8 @@ fn generate_long_number<const ARG_SIZE: usize, const LIMB_SIZE: usize>(
         .collect()
 }
 
-fn generate_add_sub_program<const ARG_SIZE: usize, const LIMB_SIZE: usize>(
-    chip: &mut LongArithmeticChip<ARG_SIZE, LIMB_SIZE>,
+fn generate_add_sub_program<const ARG_SIZE: usize, const LIMB_SIZE: usize, F: PrimeField32>(
+    chip: &mut LongArithmeticChip<ARG_SIZE, LIMB_SIZE, F>,
     len_ops: usize,
 ) {
     let mut rng = create_seeded_rng();
@@ -272,7 +272,7 @@ fn long_lt_wrong_carry_test() {
 fn long_eq_rand_air_test() {
     let len_ops: usize = 15;
     let bus_index: usize = 0;
-    let mut chip = LongArithmeticChip::<256, 16>::new(bus_index);
+    let mut chip = LongArithmeticChip::<256, 16, F>::new(bus_index);
 
     let mut rng = create_seeded_rng();
     let operands = (0..len_ops)
