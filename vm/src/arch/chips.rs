@@ -20,12 +20,14 @@ use crate::{
     modular_multiplication::ModularArithmeticChip,
     program::ProgramChip,
 };
+use crate::program::DebugInfo;
 
 #[enum_dispatch]
 pub trait InstructionExecutor<F> {
     fn execute(
         &mut self,
         instruction: Instruction<F>,
+        debug_info: Option<DebugInfo>,
         from_state: ExecutionState<usize>,
     ) -> ExecutionState<usize>;
 }
@@ -50,9 +52,10 @@ impl<F, C: InstructionExecutor<F>> InstructionExecutor<F> for Rc<RefCell<C>> {
     fn execute(
         &mut self,
         instruction: Instruction<F>,
+        debug_info: Option<DebugInfo>,
         prev_state: ExecutionState<usize>,
     ) -> ExecutionState<usize> {
-        self.borrow_mut().execute(instruction, prev_state)
+        self.borrow_mut().execute(instruction, debug_info, prev_state)
     }
 }
 

@@ -6,7 +6,6 @@ use p3_commit::PolynomialSpace;
 use p3_field::PrimeField32;
 use p3_matrix::dense::RowMajorMatrix;
 use p3_uni_stark::{Domain, StarkGenericConfig};
-
 use self::interface::MemoryInterface;
 use super::audit::{air::MemoryAuditAir, MemoryAuditChip};
 use crate::{
@@ -94,6 +93,12 @@ pub struct MemoryChip<F: PrimeField32> {
 
 pub const MEMORY_TOP: u32 = (1 << 29) - 1;
 
+#[derive(Clone, Copy, Debug)]
+pub enum MemoryError<T> {
+    UninitializedMemory(T, T),
+    MemoryOutOfBounds(T),
+}
+
 impl<F: PrimeField32> MemoryChip<F> {
     // pub fn with_persistent_memory(
     //     memory_dimensions: MemoryDimensions,
@@ -137,11 +142,11 @@ impl<F: PrimeField32> MemoryChip<F> {
         )
     }
 
-    pub fn read_cell(&mut self, address_space: F, pointer: F) -> MemoryReadRecord<1, F> {
+    pub fn read_cell(&mut self, address_space: F, pointer: F) -> Result<MemoryReadRecord<1, F>, MemoryError<F>> {
         self.read(address_space, pointer)
     }
 
-    pub fn read<const N: usize>(&mut self, address_space: F, pointer: F) -> MemoryReadRecord<N, F> {
+    pub fn read<const N: usize>(&mut self, address_space: F, pointer: F) -> Result<MemoryReadRecord<N, F>, MemoryError<F>> {
         assert!(
             address_space == F::zero() || pointer.as_canonical_u32() <= MEMORY_TOP,
             "memory out of bounds: {:?}",
@@ -154,24 +159,22 @@ impl<F: PrimeField32> MemoryChip<F> {
         if address_space == F::zero() {
             assert_eq!(N, 1, "cannot batch read from address space 0");
 
-            return MemoryReadRecord {
+            return Ok(MemoryReadRecord {
                 address_space,
                 pointer,
                 timestamp,
                 prev_timestamps: [F::zero(); N],
                 data: array::from_fn(|_| pointer),
-            };
+            });
         }
 
-        let prev_entries = array::from_fn(|i| {
+        let prev_entries: [Result<TimestampedValue<F>, MemoryError<F>>; N] = array::from_fn(|i| {
             let cur_ptr = pointer + F::from_canonical_usize(i);
 
             let entry = self
                 .memory
                 .get_mut(&(address_space, cur_ptr))
-                .unwrap_or_else(|| {
-                    panic!("read of uninitialized memory ({address_space:?}, {cur_ptr:?})")
-                });
+                .ok_or(MemoryError::UninitializedMemory(address_space, cur_ptr))?;
             debug_assert!(entry.timestamp < timestamp);
 
             let prev_entry = *entry;
@@ -180,16 +183,22 @@ impl<F: PrimeField32> MemoryChip<F> {
             self.interface_chip
                 .touch_address(address_space, cur_ptr, entry.value);
 
-            prev_entry
+            Ok(prev_entry)
         });
 
-        MemoryReadRecord {
+        for entry in &prev_entries {
+            if let Err(e) = entry {
+                return Err(*e)
+            }
+        }
+
+        Ok(MemoryReadRecord {
             address_space,
             pointer,
             timestamp,
-            prev_timestamps: prev_entries.map(|entry| entry.timestamp),
-            data: prev_entries.map(|entry| entry.value),
-        }
+            prev_timestamps: prev_entries.map(|entry| entry.unwrap().timestamp),
+            data: prev_entries.map(|entry| entry.unwrap().value),
+        })
     }
 
     /// Reads a word directly from memory without updating internal state.
@@ -199,7 +208,7 @@ impl<F: PrimeField32> MemoryChip<F> {
         self.memory.get(&(addr_space, pointer)).unwrap().value
     }
 
-    pub fn write_cell(&mut self, address_space: F, pointer: F, data: F) -> MemoryWriteRecord<1, F> {
+    pub fn write_cell(&mut self, address_space: F, pointer: F, data: F) -> Result<MemoryWriteRecord<1, F>, MemoryError<F>> {
         self.write(address_space, pointer, [data])
     }
 
@@ -208,7 +217,7 @@ impl<F: PrimeField32> MemoryChip<F> {
         address_space: F,
         pointer: F,
         data: [F; N],
-    ) -> MemoryWriteRecord<N, F> {
+    ) -> Result<MemoryWriteRecord<N, F>, MemoryError<F>> {
         assert_ne!(address_space, F::zero());
         assert!(
             address_space == F::zero() || pointer.as_canonical_u32() <= MEMORY_TOP,
@@ -242,14 +251,14 @@ impl<F: PrimeField32> MemoryChip<F> {
             prev_entry
         });
 
-        MemoryWriteRecord {
+        Ok(MemoryWriteRecord {
             address_space,
             pointer,
             timestamp,
             prev_timestamps: prev_entries.map(|entry| entry.timestamp),
             data,
             prev_data: prev_entries.map(|entry| entry.value),
-        }
+        })
     }
 
     pub fn unsafe_write_cell(&mut self, addr_space: F, pointer: F, data: F) {

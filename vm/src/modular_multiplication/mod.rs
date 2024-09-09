@@ -13,6 +13,7 @@ use crate::{
     memory::manager::MemoryChipRef,
     vm::ExecutionSegment,
 };
+use crate::program::DebugInfo;
 
 pub mod air;
 // mod columns;
@@ -94,6 +95,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for ModularArithmeticChip<F> {
     fn execute(
         &mut self,
         instruction: Instruction<F>,
+        debug_info: Option<DebugInfo>,
         from_state: ExecutionState<usize>,
     ) -> ExecutionState<usize> {
         let (op_input_2, op_result) = match instruction.opcode {
@@ -117,11 +119,12 @@ impl<F: PrimeField32> InstructionExecutor<F> for ModularArithmeticChip<F> {
         // TODO[zach]: update for word size
         let address1 = memory_chip
             .read_cell(instruction.d, instruction.op_a)
+            .unwrap()
             .value();
 
-        let address2 = memory_chip.read_cell(instruction.d, op_input_2).value();
+        let address2 = memory_chip.read_cell(instruction.d, op_input_2).unwrap().value();
 
-        let output_address = memory_chip.read_cell(instruction.d, op_result).value();
+        let output_address = memory_chip.read_cell(instruction.d, op_result).unwrap().value();
 
         let air = &self.air;
         let num_elems = air.air.limb_dimensions.io_limb_sizes.len();
@@ -130,6 +133,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for ModularArithmeticChip<F> {
             .map(|i| {
                 memory_chip
                     .read_cell(instruction.e, address1 + F::from_canonical_usize(i))
+                    .unwrap()
                     .value()
             })
             .collect();
@@ -137,6 +141,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for ModularArithmeticChip<F> {
             .map(|i| {
                 memory_chip
                     .read_cell(instruction.e, address2 + F::from_canonical_usize(i))
+                    .unwrap()
                     .value()
             })
             .collect();
@@ -165,7 +170,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for ModularArithmeticChip<F> {
                 instruction.e,
                 output_address + F::from_canonical_usize(i),
                 elem,
-            );
+            ).unwrap();
         }
         self.ops.push(VmModularArithmetic {
             instruction: instruction.clone(),
@@ -226,18 +231,21 @@ impl<F: PrimeField32> ModularArithmeticChip<F> {
             .memory_chip
             .borrow_mut()
             .read_cell(instruction.d, instruction.op_a)
+            .unwrap()
             .value();
 
         let address2 = vm
             .memory_chip
             .borrow_mut()
             .read_cell(instruction.d, op_input_2)
+            .unwrap()
             .value();
 
         let output_address = vm
             .memory_chip
             .borrow_mut()
             .read_cell(instruction.d, op_result)
+            .unwrap()
             .value();
 
         let chip: ModularArithmeticChip<F> = todo!();
@@ -249,6 +257,7 @@ impl<F: PrimeField32> ModularArithmeticChip<F> {
                 vm.memory_chip
                     .borrow_mut()
                     .read_cell(instruction.e, address1 + F::from_canonical_usize(i))
+                    .unwrap()
                     .value()
             })
             .collect();
@@ -257,6 +266,7 @@ impl<F: PrimeField32> ModularArithmeticChip<F> {
                 vm.memory_chip
                     .borrow_mut()
                     .read_cell(instruction.e, address2 + F::from_canonical_usize(i))
+                    .unwrap()
                     .value()
             })
             .collect();
@@ -285,7 +295,7 @@ impl<F: PrimeField32> ModularArithmeticChip<F> {
                 instruction.e,
                 output_address + F::from_canonical_usize(i),
                 elem,
-            );
+            ).unwrap();
         }
         chip.ops.push(VmModularArithmetic {
             instruction,

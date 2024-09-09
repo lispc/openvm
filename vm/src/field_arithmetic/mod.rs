@@ -1,5 +1,5 @@
 use p3_field::{Field, PrimeField32};
-
+use tracing::field::debug;
 use crate::{
     arch::{
         bus::ExecutionBus,
@@ -22,6 +22,7 @@ pub mod trace;
 pub use air::FieldArithmeticAir;
 
 use crate::memory::manager::{MemoryChipRef, MemoryReadRecord, MemoryWriteRecord};
+use crate::program::DebugInfo;
 
 #[derive(Clone, Debug)]
 pub struct FieldArithmeticRecord<F> {
@@ -59,6 +60,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for FieldArithmeticChip<F> {
     fn execute(
         &mut self,
         instruction: Instruction<F>,
+        debug_info: Option<DebugInfo>,
         from_state: ExecutionState<usize>,
     ) -> ExecutionState<usize> {
         let Instruction {
@@ -80,14 +82,24 @@ impl<F: PrimeField32> InstructionExecutor<F> for FieldArithmeticChip<F> {
             memory_chip.timestamp().as_canonical_u32() as usize
         );
 
-        let x_read = memory_chip.read_cell(x_as, x_address);
-        let y_read = memory_chip.read_cell(y_as, y_address);
+        let x_read = memory_chip.read_cell(x_as, x_address).unwrap_or_else(|err| {
+            let inst = debug_info.clone().map(|x| x.dsl_instruction);
+            if let Some(trace) = debug_info.and_then(|x| x.trace) {
+                let mut trace = trace;
+                trace.resolve();
+                panic!("{err:?}; backtrace: {trace:?}")
+            } else {
+                panic!("{err:?}; err, failed to read cell; no backtrace ({inst:?})");
+            }
+        });
+
+        let y_read = memory_chip.read_cell(y_as, y_address).unwrap();
 
         let x = x_read.value();
         let y = y_read.value();
         let z = FieldArithmetic::solve(opcode, (x, y)).unwrap();
 
-        let z_write = memory_chip.write_cell(z_as, z_address, z);
+        let z_write = memory_chip.write_cell(z_as, z_address, z).unwrap();
 
         self.records.push(FieldArithmeticRecord {
             opcode,

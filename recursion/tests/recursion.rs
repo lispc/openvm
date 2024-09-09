@@ -55,11 +55,20 @@ where
         ..Default::default()
     };
 
+    let result = {
+        let mut c = BabyBear::from_canonical_u32(a);
+        let mut d = BabyBear::from_canonical_u32(b);
+        for _ in 2..n {
+            (c, d) = (d, c + d);
+        }
+        d
+    };
+
     let vm = VirtualMachine::new(vm_config, fib_program, vec![]);
     vm.segments[0].cpu_chip.borrow_mut().public_values = vec![
         Some(BabyBear::zero()),
         Some(BabyBear::one()),
-        Some(BabyBear::from_canonical_u32(1346269)),
+        Some(result),
     ];
 
     let result = vm.execute_and_generate().unwrap();
@@ -86,7 +95,7 @@ where
 fn test_fibonacci_program_verify() {
     setup_tracing();
 
-    let fib_program_stark = fibonacci_program_stark_for_test(0, 1, 32);
+    let fib_program_stark = fibonacci_program_stark_for_test(0, 1, 1 << 20);
     run_recursive_test(fib_program_stark, default_fri_params());
 }
 

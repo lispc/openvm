@@ -23,7 +23,7 @@ afs-derive = { path = "../derive" }
 parking_lot = "0.12.2"
 itertools.workspace = true
 getset = "0.1.2"
-num-bigint-dig = "0.8.4"
+num-bigint-dig = { workspace = true }
 num-traits = "0.2.19"
 num-integer = "0.1.45"
 prime_factorization = "1.0.4"

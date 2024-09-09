@@ -325,17 +325,17 @@ fn test_vm_compress_poseidon2_as2() {
         ));
     }
     let rhs_ptr = rng.gen_range(1..1 << 20);
-    for i in 0..8 {
-        // [rhs_ptr + i]_2 <- rnd()
-        instructions.push(Instruction::from_isize(
-            STOREW,
-            rng.gen_range(1..1 << 20),
-            i,
-            rhs_ptr,
-            0,
-            2,
-        ));
-    }
+    // for i in 0..8 {
+    //     // [rhs_ptr + i]_2 <- rnd()
+    //     instructions.push(Instruction::from_isize(
+    //         STOREW,
+    //         rng.gen_range(1..1 << 20),
+    //         i,
+    //         rhs_ptr,
+    //         0,
+    //         2,
+    //     ));
+    // }
     let dst_ptr = rng.gen_range(1..1 << 20);
 
     // [11]_1 <- lhs_ptr

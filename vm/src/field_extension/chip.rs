@@ -16,6 +16,7 @@ use crate::{
     field_extension::air::FieldExtensionArithmeticAir,
     memory::manager::{MemoryChipRef, MemoryReadRecord, MemoryWriteRecord},
 };
+use crate::program::DebugInfo;
 
 pub const BETA: usize = 11;
 pub const EXT_DEG: usize = 4;
@@ -52,6 +53,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for FieldExtensionArithmeticChip<F>
     fn execute(
         &mut self,
         instruction: Instruction<F>,
+        debug_info: Option<DebugInfo>,
         from_state: ExecutionState<usize>,
     ) -> ExecutionState<usize> {
         let Instruction {
@@ -71,14 +73,14 @@ impl<F: PrimeField32> InstructionExecutor<F> for FieldExtensionArithmeticChip<F>
 
         let mut memory_chip = self.memory_chip.borrow_mut();
 
-        let x_read = memory_chip.read(d, op_b);
+        let x_read = memory_chip.read(d, op_b).unwrap();
         let x: [F; EXT_DEG] = x_read.data;
 
-        let y_read = memory_chip.read(e, op_c);
+        let y_read = memory_chip.read(e, op_c).unwrap();
         let y: [F; EXT_DEG] = y_read.data;
 
         let z = FieldExtensionArithmetic::solve(opcode, x, y).unwrap();
-        let z_write = memory_chip.write(d, op_a, z);
+        let z_write = memory_chip.write(d, op_a, z).unwrap();
 
         self.records.push(FieldExtensionArithmeticRecord {
             timestamp: from_state.timestamp,

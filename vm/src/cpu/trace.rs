@@ -4,7 +4,6 @@ use std::{
     error::Error,
     fmt::Display,
 };
-
 use afs_primitives::{is_equal_vec::IsEqualVecAir, sub_chip::LocalTraceInstructions};
 use afs_stark_backend::rap::AnyRap;
 use itertools::Itertools;
@@ -230,8 +229,8 @@ impl<F: PrimeField32> CpuChip<F> {
                 vm.program_chip.borrow_mut().get_instruction(pc_usize)?;
             tracing::trace!("pc: {pc_usize} | time: {timestamp} | {:?}", instruction);
 
-            let dsl_instr = match debug_info {
-                Some(debug_info) => debug_info.dsl_instruction,
+            let dsl_instr = match &debug_info {
+                Some(debug_info) => debug_info.dsl_instruction.clone(),
                 None => String::new(),
             };
 
@@ -269,7 +268,7 @@ impl<F: PrimeField32> CpuChip<F> {
                 ($addr_space: expr, $pointer: expr) => {{
                     assert!(read_records.len() < CPU_MAX_READS_PER_CYCLE);
                     let mut memory_chip = vm.memory_chip.borrow_mut();
-                    read_records.push(memory_chip.read_cell($addr_space, $pointer));
+                    read_records.push(memory_chip.read_cell($addr_space, $pointer).unwrap());
                     read_records[read_records.len() - 1].data[0]
                 }};
             }
@@ -278,7 +277,7 @@ impl<F: PrimeField32> CpuChip<F> {
                 ($addr_space: expr, $pointer: expr, $data: expr) => {{
                     assert!(write_records.len() < CPU_MAX_WRITES_PER_CYCLE);
                     let mut memory_chip = vm.memory_chip.borrow_mut();
-                    write_records.push(memory_chip.write_cell($addr_space, $pointer, $data));
+                    write_records.push(memory_chip.write_cell($addr_space, $pointer, $data).unwrap());
                 }};
             }
 
@@ -293,6 +292,7 @@ impl<F: PrimeField32> CpuChip<F> {
                 let next_state = InstructionExecutor::execute(
                     executor,
                     instruction,
+                    debug_info,
                     ExecutionState::new(pc_usize, timestamp),
                 );
                 next_pc = F::from_canonical_usize(next_state.pc);

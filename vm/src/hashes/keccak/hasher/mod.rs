@@ -24,6 +24,7 @@ use crate::{
     cpu::trace::Instruction,
     memory::manager::{MemoryChipRef, MemoryReadRecord, MemoryWriteRecord},
 };
+use crate::program::DebugInfo;
 
 /// Memory reads to get dst, src, len
 const KECCAK_EXECUTION_READS: usize = 3;
@@ -103,6 +104,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for KeccakVmChip<F> {
     fn execute(
         &mut self,
         instruction: Instruction<F>,
+        debug_info: Option<DebugInfo>,
         from_state: ExecutionState<usize>,
     ) -> ExecutionState<usize> {
         let Instruction {
@@ -123,9 +125,9 @@ impl<F: PrimeField32> InstructionExecutor<F> for KeccakVmChip<F> {
             memory.timestamp().as_canonical_u32() as usize
         );
 
-        let dst_read = memory.read(d, a);
-        let src_read = memory.read(d, b);
-        let len_read = memory.read(f, c);
+        let dst_read = memory.read(d, a).unwrap();
+        let src_read = memory.read(d, b).unwrap();
+        let len_read = memory.read(f, c).unwrap();
 
         let dst = dst_read.value();
         let mut src = src_read.value();
@@ -144,7 +146,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for KeccakVmChip<F> {
             let mut bytes_read = Vec::with_capacity(KECCAK_RATE_BYTES);
             let bytes: [_; KECCAK_RATE_BYTES] = from_fn(|i| {
                 if i < remaining_len {
-                    let byte_read = memory.read(e, src + F::from_canonical_usize(i));
+                    let byte_read = memory.read(e, src + F::from_canonical_usize(i)).unwrap();
                     let byte = byte_read
                         .value()
                         .as_canonical_u32()
@@ -188,7 +190,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for KeccakVmChip<F> {
                 e,
                 dst + F::from_canonical_usize(i),
                 [F::from_canonical_u8(output[i])],
-            )
+            ).unwrap()
         });
         tracing::trace!("[runtime] keccak256 output: {:?}", output);
 

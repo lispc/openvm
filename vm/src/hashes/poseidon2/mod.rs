@@ -18,6 +18,7 @@ use crate::{
         tree::Hasher,
     },
 };
+use crate::program::DebugInfo;
 
 #[cfg(test)]
 pub mod tests;
@@ -179,6 +180,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for Poseidon2Chip<F> {
     fn execute(
         &mut self,
         instruction: Instruction<F>,
+        debug_info: Option<DebugInfo>,
         from_state: ExecutionState<usize>,
     ) -> ExecutionState<usize> {
         let mut memory_chip = self.memory_chip.borrow_mut();
@@ -198,15 +200,15 @@ impl<F: PrimeField32> InstructionExecutor<F> for Poseidon2Chip<F> {
 
         let chunk_f = F::from_canonical_usize(CHUNK);
 
-        let dst_ptr_read = memory_chip.read_cell(d, op_a);
+        let dst_ptr_read = memory_chip.read_cell(d, op_a).unwrap();
         let dst_ptr = dst_ptr_read.value();
 
-        let lhs_ptr_read = memory_chip.read_cell(d, op_b);
+        let lhs_ptr_read = memory_chip.read_cell(d, op_b).unwrap();
         let lhs_ptr = lhs_ptr_read.value();
 
         let (rhs_ptr, rhs_ptr_read) = match opcode {
             COMP_POS2 => {
-                let rhs_ptr_read = memory_chip.read_cell(d, op_c);
+                let rhs_ptr_read = memory_chip.read_cell(d, op_c).unwrap();
                 (rhs_ptr_read.value(), Some(rhs_ptr_read))
             }
             PERM_POS2 => {
@@ -216,8 +218,8 @@ impl<F: PrimeField32> InstructionExecutor<F> for Poseidon2Chip<F> {
             _ => panic!("unrecognized Poseidon2Chip opcode"),
         };
 
-        let lhs_read = memory_chip.read(e, lhs_ptr);
-        let rhs_read = memory_chip.read(e, rhs_ptr);
+        let lhs_read = memory_chip.read(e, lhs_ptr).unwrap();
+        let rhs_read = memory_chip.read(e, rhs_ptr).unwrap();
         let input_state: [F; WIDTH] = array::from_fn(|i| {
             if i < CHUNK {
                 lhs_read.data[i]
@@ -232,13 +234,13 @@ impl<F: PrimeField32> InstructionExecutor<F> for Poseidon2Chip<F> {
         let output1: [F; CHUNK] = array::from_fn(|i| output[i]);
         let output2: [F; CHUNK] = array::from_fn(|i| output[CHUNK + i]);
 
-        let output1_write = memory_chip.write(e, dst_ptr, output1);
+        let output1_write = memory_chip.write(e, dst_ptr, output1).unwrap();
         let output2_write = match opcode {
             COMP_POS2 => {
                 memory_chip.increment_timestamp();
                 None
             }
-            PERM_POS2 => Some(memory_chip.write(e, dst_ptr + chunk_f, output2)),
+            PERM_POS2 => Some(memory_chip.write(e, dst_ptr + chunk_f, output2).unwrap()),
             _ => unreachable!(),
         };
 

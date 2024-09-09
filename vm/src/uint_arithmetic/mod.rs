@@ -15,6 +15,7 @@ use crate::{
     cpu::trace::Instruction,
     memory::manager::{MemoryChipRef, MemoryReadRecord, MemoryWriteRecord},
 };
+use crate::program::DebugInfo;
 
 #[cfg(test)]
 pub mod tests;
@@ -88,6 +89,7 @@ impl<const ARG_SIZE: usize, const LIMB_SIZE: usize, T: PrimeField32> Instruction
     fn execute(
         &mut self,
         instruction: Instruction<T>,
+        debug_info: Option<DebugInfo>,
         from_state: ExecutionState<usize>,
     ) -> ExecutionState<usize> {
         let Instruction {
@@ -109,8 +111,8 @@ impl<const ARG_SIZE: usize, const LIMB_SIZE: usize, T: PrimeField32> Instruction
             memory_chip.timestamp().as_canonical_u32() as usize
         );
 
-        let x_read = memory_chip.read::<16>(x_as, x_address); // TODO: 16 -> generic expr or smth
-        let y_read = memory_chip.read::<16>(y_as, y_address); // TODO: 16 -> generic expr or smth
+        let x_read = memory_chip.read::<16>(x_as, x_address).unwrap(); // TODO: 16 -> generic expr or smth
+        let y_read = memory_chip.read::<16>(y_as, y_address).unwrap(); // TODO: 16 -> generic expr or smth
 
         let x = x_read.data.map(|x| x.as_canonical_u32());
         let y = y_read.data.map(|x| x.as_canonical_u32());
@@ -127,10 +129,10 @@ impl<const ARG_SIZE: usize, const LIMB_SIZE: usize, T: PrimeField32> Instruction
                     z_as,
                     z_address,
                     to_write.try_into().unwrap(),
-                ))
+                ).unwrap())
             }
             CalculationResult::Short(res) => {
-                WriteRecord::Short(memory_chip.write_cell(z_as, z_address, T::from_bool(res)))
+                WriteRecord::Short(memory_chip.write_cell(z_as, z_address, T::from_bool(res)).unwrap())
             }
         };
 
