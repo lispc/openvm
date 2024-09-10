@@ -264,22 +264,22 @@ impl<N: Field> Var<N> {
                     builder.push(DslIr::AddVI(*self, *lhs, *rhs));
                 }
                 (SymbolicVar::Val(lhs, _), SymbolicVar::Val(rhs, _)) => {
-                    builder.push(DslIr::AddV(*self, *lhs, *rhs));
+                    builder.trace_push(DslIr::AddV(*self, *lhs, *rhs));
                 }
                 (SymbolicVar::Val(lhs, _), rhs) => {
                     let rhs_value = Self::uninit(builder);
                     rhs_value.assign(rhs.clone(), builder);
-                    builder.push(DslIr::AddV(*self, *lhs, rhs_value));
+                    builder.trace_push(DslIr::AddV(*self, *lhs, rhs_value));
                 }
                 (lhs, SymbolicVar::Const(rhs, _)) => {
                     let lhs_value = Self::uninit(builder);
                     lhs_value.assign(lhs.clone(), builder);
-                    builder.push(DslIr::AddVI(*self, lhs_value, *rhs));
+                    builder.trace_push(DslIr::AddVI(*self, lhs_value, *rhs));
                 }
                 (lhs, SymbolicVar::Val(rhs, _)) => {
                     let lhs_value = Self::uninit(builder);
                     lhs_value.assign(lhs.clone(), builder);
-                    builder.push(DslIr::AddV(*self, lhs_value, *rhs));
+                    builder.trace_push(DslIr::AddV(*self, lhs_value, *rhs));
                 }
                 (lhs, rhs) => {
                     let lhs_value = Self::uninit(builder);
@@ -288,7 +288,7 @@ impl<N: Field> Var<N> {
                     let rhs_value = Self::uninit(builder);
                     rhs_value.assign_with_cache(rhs.clone(), builder, cache);
                     cache.insert(rhs.clone(), rhs_value);
-                    builder.push(DslIr::AddV(*self, lhs_value, rhs_value));
+                    builder.trace_push(DslIr::AddV(*self, lhs_value, rhs_value));
                 }
             },
             SymbolicVar::Mul(lhs, rhs, _) => match (&*lhs, &*rhs) {
