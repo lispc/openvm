@@ -44,7 +44,7 @@ impl<T> TracedVec<T> {
 
     pub fn push(&mut self, value: T) {
         self.vec.push(value);
-        self.traces.push(None);
+        self.traces.push(Some(Backtrace::new_unresolved()));
     }
 
     /// Pushes a value to the vector and records a backtrace if SP1_DEBUG is enabled
