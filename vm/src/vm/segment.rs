@@ -254,9 +254,10 @@ impl<F: PrimeField32> ExecutionSegment<F> {
     ///
     /// Used by CpuChip::execute, should be private in the future
     pub fn should_segment(&mut self) -> bool {
-        self.chips
-            .iter()
-            .any(|chip| chip.current_trace_height() > self.config.max_segment_len)
+        false
+        // self.chips
+        //     .iter()
+        //     .any(|chip| chip.current_trace_height() > self.config.max_segment_len)
     }
 
     /// Used by CpuChip::execute, should be private in the future

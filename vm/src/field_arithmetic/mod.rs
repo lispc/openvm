@@ -1,5 +1,4 @@
 use p3_field::{Field, PrimeField32};
-use tracing::field::debug;
 use crate::{
     arch::{
         bus::ExecutionBus,
@@ -84,8 +83,7 @@ impl<F: PrimeField32> InstructionExecutor<F> for FieldArithmeticChip<F> {
 
         let x_read = memory_chip.read_cell(x_as, x_address).unwrap_or_else(|err| {
             let inst = debug_info.clone().map(|x| x.dsl_instruction);
-            if let Some(trace) = debug_info.and_then(|x| x.trace) {
-                let mut trace = trace;
+            if let Some(mut trace) = debug_info.and_then(|x| x.trace) {
                 trace.resolve();
                 panic!("{err:?}; backtrace: {trace:?}")
             } else {
