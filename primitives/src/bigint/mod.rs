@@ -10,6 +10,7 @@ use p3_util::log2_ceil_usize;
 
 pub mod check_carry_mod_to_zero;
 pub mod check_carry_to_zero;
+pub mod fp2_arithmetic;
 pub mod modular_arithmetic;
 pub mod utils;
 
@@ -184,6 +185,88 @@ where
             limbs,
             max_overflow_bits: max_bits,
             limb_max_abs: new_max,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct OverflowIntPair<T> {
+    pub x: OverflowInt<T>,
+    pub y: OverflowInt<T>,
+}
+
+impl OverflowIntPair<isize> {
+    pub fn calculate_carries(&self, limb_bits: usize) -> (Vec<isize>, Vec<isize>) {
+        let mut carries1 = Vec::with_capacity(self.x.limbs.len());
+
+        let mut carry = 0;
+        for i in 0..self.x.limbs.len() {
+            carry = (carry + self.x.limbs[i]) >> limb_bits;
+            carries1.push(carry);
+        }
+
+        let mut carries2 = Vec::with_capacity(self.y.limbs.len());
+        let mut carry = 0;
+        for i in 0..self.y.limbs.len() {
+            carry = (carry + self.y.limbs[i]) >> limb_bits;
+            carries2.push(carry);
+        }
+        (carries1, carries2)
+    }
+}
+
+// TODO: this doesn't work for references automatically?
+impl<T> Add for OverflowIntPair<T>
+where
+    T: Add<Output = T> + Clone + Default,
+{
+    type Output = OverflowIntPair<T>;
+
+    fn add(self, other: OverflowIntPair<T>) -> OverflowIntPair<T> {
+        OverflowIntPair {
+            x: self.x.clone() + other.x.clone(),
+            y: self.y.clone() + other.y.clone(),
+        }
+    }
+}
+
+// TODO: this doesn't work for references automatically?
+impl<T> Sub for OverflowIntPair<T>
+where
+    T: Sub<Output = T> + Clone + Default,
+{
+    type Output = OverflowIntPair<T>;
+
+    fn sub(self, other: OverflowIntPair<T>) -> OverflowIntPair<T> {
+        OverflowIntPair {
+            x: self.x.clone() - other.x.clone(),
+            y: self.y.clone() - other.y.clone(),
+        }
+    }
+}
+
+impl<T> Mul for OverflowIntPair<T>
+where
+    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Clone + Default,
+{
+    type Output = OverflowIntPair<T>;
+
+    fn mul(self, other: OverflowIntPair<T>) -> OverflowIntPair<T> {
+        OverflowIntPair {
+            x: self.x.clone() * other.x.clone() - self.y.clone() * other.y.clone(),
+            y: self.x.clone() * other.y.clone() + self.y.clone() * other.x.clone(),
+        }
+    }
+}
+
+impl<T> OverflowIntPair<T>
+where
+    T: Add<Output = T> + Mul<Output = T> + Clone + Default,
+{
+    pub fn mul_by_int(self, other: OverflowInt<T>) -> OverflowIntPair<T> {
+        OverflowIntPair {
+            x: self.x.clone() * other.clone(),
+            y: self.y.clone() * other.clone(),
         }
     }
 }

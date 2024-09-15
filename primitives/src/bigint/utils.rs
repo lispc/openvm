@@ -4,7 +4,7 @@ use afs_stark_backend::interaction::InteractionBuilder;
 use num_bigint_dig::{algorithms::mod_inverse, BigInt, BigUint, Sign};
 use num_traits::{FromPrimitive, One, ToPrimitive, Zero};
 
-use super::modular_arithmetic::ModularArithmeticAir;
+use super::{fp2_arithmetic::Fp2ArithmeticAir, modular_arithmetic::ModularArithmeticAir};
 use crate::var_range::bus::VariableRangeCheckerBus;
 
 // Checks that the given expression is within bits number of bits.
@@ -61,6 +61,33 @@ pub fn get_arithmetic_air(
         num_limbs
     };
     ModularArithmeticAir::new(
+        prime,
+        limb_bits,
+        field_element_bits,
+        num_limbs,
+        q_limbs,
+        carry_limbs,
+        range_bus,
+        range_decomp,
+    )
+}
+
+pub fn get_fp2_arithmetic_air(
+    prime: BigUint,
+    limb_bits: usize,
+    field_element_bits: usize,
+    num_limbs: usize,
+    is_mul_div: bool,
+    range_bus: usize,
+    range_decomp: usize,
+) -> Fp2ArithmeticAir {
+    let q_limbs = if is_mul_div { num_limbs } else { 1 };
+    let carry_limbs = if is_mul_div {
+        2 * num_limbs - 1
+    } else {
+        num_limbs
+    };
+    Fp2ArithmeticAir::new(
         prime,
         limb_bits,
         field_element_bits,
