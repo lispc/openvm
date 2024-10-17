@@ -2,11 +2,10 @@ use std::{array::from_fn, marker::PhantomData, mem::size_of};
 
 use afs_derive::AlignedBorrow;
 use p3_air::BaseAir;
-use p3_field::{AbstractField, Field, PrimeField32};
+use p3_field::{Field, PrimeField32};
 
 use super::{
-    batch_read_rv32_registers, read_rv32_register, Rv32RegisterHeapReadAuxCols,
-    Rv32RegisterHeapReadRecord, Rv32RegisterHeapWriteAuxCols, Rv32RegisterHeapWriteRecord,
+    read_rv32_register, Rv32RegisterHeapReadRecord, Rv32RegisterHeapWriteRecord,
     RV32_REGISTER_NUM_LANES,
 };
 use crate::{
@@ -14,7 +13,6 @@ use crate::{
         AdapterRuntimeContext, BasicAdapterInterface, ExecutionBridge, ExecutionState, Result,
         VmAdapterChip, VmAdapterInterface,
     },
-    rv32im::adapters::{read_heap_from_rv32_register, write_heap_from_rv32_register},
     system::{
         memory::{
             offline_checker::{MemoryBridge, MemoryReadAuxCols, MemoryWriteAuxCols},
@@ -114,30 +112,6 @@ impl<
     }
 }
 
-// pub struct Rv32VecHeapAdapterInterface<
-//     T,
-//     const NUM_READS: usize,
-//     const NUM_WRITES: usize,
-//     const READ_SIZE: usize,
-//     const WRITE_SIZE: usize,
-// > {
-//     _marker: PhantomData<T>,
-// }
-
-// impl<
-//         T: AbstractField,
-//         const NUM_READS: usize,
-//         const NUM_WRITES: usize,
-//         const READ_SIZE: usize,
-//         const WRITE_SIZE: usize,
-//     > VmAdapterInterface<T>
-//     for BasicAdapterInterface<T, NUM_READS, NUM_WRITES, READ_SIZE, WRITE_SIZE>
-// {
-//     type Reads = [[T; READ_SIZE]; NUM_READS];
-//     type Writes = [[T; WRITE_SIZE]; NUM_WRITES];
-//     type ProcessedInstruction = ();
-// }
-
 pub struct Rv32VecHeapAdapterCols<
     T,
     const NUM_READS: usize,
@@ -199,15 +173,9 @@ impl<
 
         let read_record =
             batch_read_heap_from_rv32_register::<F, READ_CELLS>(memory, d, e, address_ptr);
-        // let reads = read_record
-        //     .iter()
-        //     .map(|x| x.data_read.data)
-        //     .collect::<Vec<_>>();
         let mut read_record_it = read_record.data_read.data.into_iter();
         let reads: [[F; READ_SIZE]; NUM_READS] =
             from_fn(|_| from_fn(|_| read_record_it.next().unwrap()));
-        // let read_record: [Rv32RegisterHeapReadRecord<F, READ_SIZE>; NUM_READS] =
-        //     read_record.try_into().unwrap();
 
         Ok((reads, read_record))
     }
@@ -234,8 +202,6 @@ impl<
             WRITE_SIZE,
             WRITE_CELLS,
         >(memory, d, e, address_out, output.writes);
-        let write_record: [Rv32RegisterHeapWriteRecord<F, WRITE_SIZE>; NUM_WRITES] =
-            write_record.try_into().unwrap();
 
         Ok((
             ExecutionState {
@@ -261,12 +227,7 @@ impl<
 }
 
 /// First lookup the heap pointer from register, and then read the data at the pointer.
-pub fn batch_read_heap_from_rv32_register<
-    F: PrimeField32,
-    // const NUM_READS: usize,
-    // const READ_SIZE: usize,
-    const READ_CELLS: usize,
->(
+pub fn batch_read_heap_from_rv32_register<F: PrimeField32, const READ_CELLS: usize>(
     memory: &mut MemoryController<F>,
     ptr_address_space: F,
     data_address_space: F,
@@ -296,6 +257,8 @@ pub fn batch_write_heap_from_rv32_register<
     data: [[F; WRITE_SIZE]; NUM_WRITES],
 ) -> Rv32RegisterHeapWriteRecord<F, WRITE_CELLS> {
     let (address_read, val) = read_rv32_register(memory, ptr_address_space, ptr_pointer);
+    let mut data_it = data.into_iter().flatten();
+    let data = from_fn(|_| data_it.next().unwrap());
     let data_write =
         memory.write::<WRITE_CELLS>(data_address_space, F::from_canonical_u32(val), data);
 
