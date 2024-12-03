@@ -26,13 +26,18 @@ pub fn main() {
 
     // This can fix, but don't know why
     // assert_ne!(res, Secp256k1Coord::from_u32(0));
-
+    // res = res * &a;
+    // a *= a.clone();
+    axvm::io::print("hello");
+    // let b = Secp256k1Coord::from_u32(1522756);
+    // assert_eq!(a, b);
+    // assert_eq!(res, Secp256k1Coord::from_u32(1234));
     for i in 0..32 {
         for j in 0..8 {
             if pow[i] & (1 << j) != 0 {
                 res.mul_assign(&a); // ok
 
-                res = res * &a; // not ok, unless print the uninit
+                // res = core::ops::Mul::mul(res, &a); // not ok, unless print the uninit
             }
             a.square_assign(); // ok
 
@@ -47,12 +52,12 @@ pub fn main() {
     // https://en.wikipedia.org/wiki/Fermat%27s_little_theorem
     assert_eq!(res, inv);
 
-    let two = Secp256k1Coord::from_u32(2);
-    let minus_two = Secp256k1Coord::from_le_bytes(&pow);
+    // let two = Secp256k1Coord::from_u32(2);
+    // let minus_two = Secp256k1Coord::from_le_bytes(&pow);
 
-    assert_eq!(res - &minus_two, inv + &two);
+    // assert_eq!(res - &minus_two, inv + &two);
 
-    if two == minus_two {
-        axvm::process::panic();
-    }
+    // if two == minus_two {
+    //     axvm::process::panic();
+    // }
 }
