@@ -388,6 +388,7 @@ impl<
             record
         });
         let (rd_record, rd_val) = read_rv32_register(memory, d, a);
+        println!("rd_val: {}, rs_vals: {:?}", rd_val, rs_vals);
 
         // Read memory values
         let read_records = rs_vals.map(|address| {

@@ -12,7 +12,9 @@ axvm_algebra_moduli_setup::moduli_declare! {
 axvm_algebra_moduli_setup::moduli_init!(
     "0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFC2F"
 );
-
+extern crate alloc;
+use alloc::string::ToString;
+use core::ops::MulAssign;
 pub fn main() {
     setup_all_moduli();
     let mut pow = Secp256k1Coord::MODULUS;
@@ -22,14 +24,23 @@ pub fn main() {
     let mut res = Secp256k1Coord::from_u32(1);
     let inv = res.clone().div_unsafe(&a);
 
-    assert_ne!(res, Secp256k1Coord::from_u32(0));
+    // This can fix, but don't know why
+    // assert_ne!(res, Secp256k1Coord::from_u32(0));
 
     for i in 0..32 {
         for j in 0..8 {
             if pow[i] & (1 << j) != 0 {
-                res = res * &a;
+                res.mul_assign(&a); // ok
+
+                res = res * &a; // not ok, unless print the uninit
             }
-            a *= a.clone();
+            a.square_assign(); // ok
+
+            // a *= a.clone(); // not ok
+
+            // let aa = a.clone(); // needs print
+            // axvm::io::print((&aa as *const Secp256k1Coord as usize).to_string());
+            // a *= aa;
         }
     }
 

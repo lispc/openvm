@@ -1,5 +1,6 @@
 #![feature(proc_macro_diagnostic)]
 
+extern crate alloc;
 extern crate proc_macro;
 
 use std::sync::atomic::AtomicUsize;
@@ -542,11 +543,14 @@ pub fn moduli_declare(input: TokenStream) -> TokenStream {
                     }
                 }
 
+                extern crate alloc;
+                use alloc::string::ToString;
                 impl<'a> core::ops::Mul<&'a #struct_name> for &#struct_name {
                     type Output = #struct_name;
                     #[inline(always)]
                     fn mul(self, other: &'a #struct_name) -> Self::Output {
                         let mut uninit: core::mem::MaybeUninit<#struct_name> = core::mem::MaybeUninit::uninit();
+                        // axvm::io::print((uninit.as_ptr() as usize).to_string());
                         unsafe {
                             self.mul_refs_impl(other, uninit.as_mut_ptr());
                             uninit.assume_init()
