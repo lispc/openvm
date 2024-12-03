@@ -102,7 +102,7 @@ fn test_complex_runtime() -> Result<()> {
 
 #[test]
 fn test_ec_runtime() -> Result<()> {
-    let elf = build_example_program_with_features("ec", ["k256"])?;
+    let elf = build_example_program_with_features("ec", ["k256", "heap-embedded-alloc"])?;
     let axvm_exe = AxVmExe::from_elf(
         elf,
         Transpiler::<F>::default()
