@@ -128,7 +128,6 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
         loop {
             let (instruction, debug_info) =
                 self.chip_complex.program_chip_mut().get_instruction(pc)?;
-            tracing::trace!("pc: {pc:#x} | time: {timestamp} | {:?}", instruction);
 
             let (dsl_instr, trace) = debug_info.map_or(
                 (None, None),
@@ -217,19 +216,24 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
             }
             drop(memory);
 
-            #[cfg(feature = "bench-metrics")]
+            // #[cfg(feature = "bench-metrics")]
             let mut opcode_name = None;
             if let Some(executor) = self.chip_complex.inventory.get_mut_executor(&opcode) {
                 let next_state = InstructionExecutor::execute(
                     executor,
-                    instruction,
+                    instruction.clone(),
                     ExecutionState::new(pc, timestamp),
                 )?;
                 assert!(next_state.timestamp > timestamp);
-                #[cfg(feature = "bench-metrics")]
-                if collect_metrics {
-                    opcode_name = Some(executor.get_opcode_name(opcode));
-                }
+                // #[cfg(feature = "bench-metrics")]
+                // if collect_metrics {
+                opcode_name = Some(executor.get_opcode_name(opcode));
+                tracing::trace!(
+                    "pc: {pc:#x} | time: {timestamp} | {} | {:?}",
+                    opcode_name.clone().unwrap(),
+                    instruction
+                );
+                // }
                 pc = next_state.pc;
                 timestamp = next_state.timestamp;
             } else {

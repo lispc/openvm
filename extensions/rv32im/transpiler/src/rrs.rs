@@ -154,7 +154,7 @@ impl<F: PrimeField32> InstructionProcessor for InstructionTranspiler<F> {
     }
 
     fn process_jalr(&mut self, dec_insn: IType) -> Self::InstructionResult {
-        Instruction::new(
+        let instr = Instruction::new(
             Rv32JalrOpcode::JALR.with_default_offset(),
             F::from_canonical_usize(RV32_REGISTER_NUM_LIMBS * dec_insn.rd),
             F::from_canonical_usize(RV32_REGISTER_NUM_LIMBS * dec_insn.rs1),
@@ -163,7 +163,8 @@ impl<F: PrimeField32> InstructionProcessor for InstructionTranspiler<F> {
             F::ZERO,
             F::from_bool(dec_insn.rd != 0),
             F::ZERO,
-        )
+        );
+        instr
     }
 
     fn process_lui(&mut self, dec_insn: UType) -> Self::InstructionResult {
