@@ -30,7 +30,7 @@ pub fn read<T: DeserializeOwned>() -> T {
 /// Because [hint_store_u32] stores a word to memory, this function first reads to memory and then
 /// loads from memory to register.
 #[cfg(target_os = "zkvm")]
-#[inline(always)]
+#[inline(never)]
 #[allow(asm_sub_register)]
 pub fn read_u32() -> u32 {
     let ptr = unsafe { alloc::alloc::alloc(Layout::from_size_align(4, 4).unwrap()) };
@@ -44,6 +44,7 @@ pub fn read_u32() -> u32 {
 }
 
 /// Read the next `len` bytes from the hint stream into a vector.
+#[inline(never)]
 fn read_vec_by_len(len: usize) -> Vec<u8> {
     let num_words = (len + 3) / 4;
     let capacity = num_words * 4;
