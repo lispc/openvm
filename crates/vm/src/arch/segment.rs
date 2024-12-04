@@ -109,6 +109,7 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
         &mut self,
         mut pc: u32,
     ) -> Result<ExecutionSegmentState, ExecutionError> {
+        let mut prev_sp_val = 0;
         let mut timestamp = self.chip_complex.memory_controller().borrow().timestamp();
 
         #[cfg(feature = "bench-metrics")]
@@ -205,6 +206,18 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
                     self.cycle_tracker.force_end();
                 }
             };
+
+            let memory = self.chip_complex.memory_controller().borrow();
+            let sp_val = memory
+                .unsafe_read::<4>(F::ONE, F::from_canonical_usize(8))
+                .into_iter()
+                .enumerate()
+                .fold(0u32, |acc, (i, v)| acc + (v.as_canonical_u32() << (8 * i)));
+            if prev_sp_val != sp_val {
+                tracing::debug!("sp_val: {sp_val}");
+                prev_sp_val = sp_val;
+            }
+            drop(memory);
 
             #[cfg(feature = "bench-metrics")]
             let mut opcode_name = None;
