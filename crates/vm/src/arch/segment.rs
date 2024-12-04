@@ -1,3 +1,5 @@
+use std::panic::{catch_unwind, AssertUnwindSafe};
+
 use ax_stark_backend::{
     config::{Domain, StarkGenericConfig},
     p3_commit::PolynomialSpace,
@@ -207,10 +209,15 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
             #[cfg(feature = "bench-metrics")]
             let mut opcode_name = None;
             if let Some(executor) = self.chip_complex.inventory.get_mut_executor(&opcode) {
-                let next_state = InstructionExecutor::execute(
-                    executor,
-                    instruction,
-                    ExecutionState::new(pc, timestamp),
+                let next_state = maybe_unwind(
+                    || {
+                        InstructionExecutor::execute(
+                            executor,
+                            instruction,
+                            ExecutionState::new(pc, timestamp),
+                        )
+                    },
+                    &mut prev_backtrace,
                 )?;
                 assert!(next_state.timestamp > timestamp);
                 #[cfg(feature = "bench-metrics")]
@@ -336,5 +343,23 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
     /// Includes constant trace heights.
     pub fn current_trace_heights(&self) -> Vec<usize> {
         self.chip_complex.current_trace_heights()
+    }
+}
+
+fn maybe_unwind<T>(f: impl FnOnce() -> T, backtrace: &mut Option<Backtrace>) -> T {
+    #[cfg(debug_assertions)]
+    {
+        let res = catch_unwind(AssertUnwindSafe(f));
+        if res.is_err() {
+            if let Some(mut backtrace) = backtrace.take() {
+                backtrace.resolve();
+                eprintln!("axvm program failure; backtrace:\n{:?}", backtrace);
+            }
+        }
+        res.unwrap()
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        f()
     }
 }
