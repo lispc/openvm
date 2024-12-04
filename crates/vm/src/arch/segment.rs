@@ -209,16 +209,17 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
             #[cfg(feature = "bench-metrics")]
             let mut opcode_name = None;
             if let Some(executor) = self.chip_complex.inventory.get_mut_executor(&opcode) {
-                let next_state = maybe_unwind(
-                    || {
-                        InstructionExecutor::execute(
-                            executor,
-                            instruction,
-                            ExecutionState::new(pc, timestamp),
-                        )
-                    },
-                    &mut prev_backtrace,
-                )?;
+                let next_state = catch_unwind(AssertUnwindSafe(|| {
+                    InstructionExecutor::execute(
+                        executor,
+                        instruction.clone(),
+                        ExecutionState::new(pc, timestamp),
+                    )
+                }))
+                .unwrap_or_else(|_| {
+                    eprintln!("instruction: {:?}", instruction);
+                    panic!("program failed at pc: {pc:#x}");
+                })?;
                 assert!(next_state.timestamp > timestamp);
                 #[cfg(feature = "bench-metrics")]
                 if collect_metrics {
