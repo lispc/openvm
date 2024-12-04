@@ -1,4 +1,4 @@
-use ax_stark_sdk::ax_stark_backend::p3_field::AbstractField;
+use ax_stark_sdk::{ax_stark_backend::p3_field::AbstractField, config::setup_tracing};
 use axvm_bigint_circuit::Int256Rv32Config;
 use axvm_bigint_transpiler::Int256TranspilerExtension;
 use axvm_circuit::{
@@ -220,8 +220,9 @@ fn test_matrix_power_signed_runtime() -> Result<()> {
 
 #[test]
 fn test_tiny_mem_test_runtime() -> Result<()> {
+    setup_tracing();
     // let elf = build_example_program("tiny-mem-test")?;
-    let elf = build_example_program_with_features("tiny-mem-test", ["heap-embedded-alloc"])?;
+    let elf = build_example_program_with_features("tiny-mem-test", ["std"])?;
     let exe = AxVmExe::from_elf(
         elf,
         Transpiler::<F>::default()
