@@ -13,14 +13,13 @@ axvm-native-compiler = { workspace = true }
 axvm-native-recursion = { workspace = true }
 axvm-rv32im-circuit = { workspace = true }
 axvm-transpiler = { workspace = true }
-ax-poseidon2-air = { workspace = true }
 ax-stark-sdk = { workspace = true }
 p3-baby-bear = { workspace = true }
 axvm-circuit = { workspace = true }
 
+bincode = { workspace = true }
 derivative = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
 static_assertions.workspace = true
 eyre.workspace = true
 async-trait.workspace = true
