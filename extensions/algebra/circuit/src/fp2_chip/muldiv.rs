@@ -46,6 +46,7 @@ impl<F: PrimeField32, const BLOCKS: usize, const BLOCK_SIZE: usize>
             vec![is_mul_flag, is_div_flag],
             memory_controller.borrow().range_checker.clone(),
             "Fp2MulDiv",
+            false,
         );
         Self(VmChipWrapper::new(adapter, core, memory_controller))
     }
@@ -69,6 +70,8 @@ pub fn fp2_muldiv_expr(
 
     let mut rvar = Fp2::select(is_mul_flag, &z, &x);
     let fp2_constraint = lvar.mul(&mut y).sub(&mut rvar);
+    // When it's SETUP op, the constraints is z * y - x = 0, it still works as:
+    // x.c0 = x.c1 = p == 0, y.c0 = y.c1 = 0, so whatever z is, z * 0 - 0 = 0
 
     z.save_output();
     builder
@@ -128,8 +131,8 @@ mod tests {
     };
     use axvm_algebra_transpiler::Fp2Opcode;
     use axvm_circuit::arch::{testing::VmChipTestBuilder, BITWISE_OP_LOOKUP_BUS};
-    use axvm_ecc_constants::BN254;
     use axvm_instructions::{riscv::RV32_CELL_BITS, UsizeOpcode};
+    use axvm_pairing_guest::bn254::BN254_MODULUS;
     use axvm_rv32_adapters::{rv32_write_heap_default, Rv32VecHeapAdapterChip};
     use halo2curves_axiom::{bn256::Fq2, ff::Field};
     use itertools::Itertools;
@@ -147,7 +150,7 @@ mod tests {
     fn test_fp2_muldiv() {
         let mut tester: VmChipTestBuilder<F> = VmChipTestBuilder::default();
         let config = ExprBuilderConfig {
-            modulus: BN254.MODULUS.clone(),
+            modulus: BN254_MODULUS.clone(),
             num_limbs: NUM_LIMBS,
             limb_bits: LIMB_BITS,
         };

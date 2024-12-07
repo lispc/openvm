@@ -107,7 +107,6 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
         &mut self,
         mut pc: u32,
     ) -> Result<ExecutionSegmentState, ExecutionError> {
-        let mut prev_sp_val = 0;
         let mut timestamp = self.chip_complex.memory_controller().borrow().timestamp();
 
         #[cfg(feature = "bench-metrics")]
@@ -128,6 +127,7 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
         loop {
             let (instruction, debug_info) =
                 self.chip_complex.program_chip_mut().get_instruction(pc)?;
+            tracing::trace!("pc: {pc:#x} | time: {timestamp} | {:?}", instruction);
 
             let (dsl_instr, trace) = debug_info.map_or(
                 (None, None),
@@ -145,7 +145,7 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
                 vec![]
             };
 
-            if opcode == SystemOpcode::TERMINATE.with_default_offset() {
+            if opcode == AxVmOpcode::with_default_offset(SystemOpcode::TERMINATE) {
                 did_terminate = true;
                 self.chip_complex.connector_chip_mut().end(
                     ExecutionState::new(pc, timestamp),
@@ -155,7 +155,7 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
             }
 
             // Some phantom instruction handling is more convenient to do here than in PhantomChip.
-            if opcode == SystemOpcode::PHANTOM as usize {
+            if opcode == AxVmOpcode::with_default_offset(SystemOpcode::PHANTOM) {
                 // Note: the discriminant is the lower 16 bits of the c operand.
                 let discriminant = instruction.c.as_canonical_u32() as u16;
                 let phantom = SysPhantom::from_repr(discriminant);
@@ -204,36 +204,19 @@ impl<F: PrimeField32, VC: VmConfig<F>> ExecutionSegment<F, VC> {
                 }
             };
 
-            let memory = self.chip_complex.memory_controller().borrow();
-            let sp_val = memory
-                .unsafe_read::<4>(F::ONE, F::from_canonical_usize(8))
-                .into_iter()
-                .enumerate()
-                .fold(0u32, |acc, (i, v)| acc + (v.as_canonical_u32() << (8 * i)));
-            if prev_sp_val != sp_val {
-                tracing::debug!("sp_val: {sp_val}");
-                prev_sp_val = sp_val;
-            }
-            drop(memory);
-
-            // #[cfg(feature = "bench-metrics")]
+            #[cfg(feature = "bench-metrics")]
             let mut opcode_name = None;
             if let Some(executor) = self.chip_complex.inventory.get_mut_executor(&opcode) {
                 let next_state = InstructionExecutor::execute(
                     executor,
-                    instruction.clone(),
+                    instruction,
                     ExecutionState::new(pc, timestamp),
                 )?;
                 assert!(next_state.timestamp > timestamp);
-                // #[cfg(feature = "bench-metrics")]
-                // if collect_metrics {
-                opcode_name = Some(executor.get_opcode_name(opcode));
-                tracing::trace!(
-                    "pc: {pc:#x} | time: {timestamp} | {} | {:?}",
-                    opcode_name.clone().unwrap(),
-                    instruction
-                );
-                // }
+                #[cfg(feature = "bench-metrics")]
+                if collect_metrics {
+                    opcode_name = Some(executor.get_opcode_name(opcode.as_usize()));
+                }
                 pc = next_state.pc;
                 timestamp = next_state.timestamp;
             } else {

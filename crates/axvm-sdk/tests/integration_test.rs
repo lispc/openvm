@@ -20,7 +20,7 @@ use axvm_native_compiler::{conversion::CompilerOptions, prelude::*};
 use axvm_native_recursion::types::InnerConfig;
 use axvm_sdk::{
     commit::AppExecutionCommit,
-    config::{AggConfig, AppConfig},
+    config::{AggConfig, AppConfig, SdkVmConfig},
     keygen::{AggProvingKey, AppProvingKey},
     prover::{commit_app_exe, generate_leaf_committed_exe, StarkProver},
     verifier::{
@@ -28,7 +28,7 @@ use axvm_sdk::{
         leaf::types::{LeafVmVerifierInput, UserPublicValuesRootProof},
         root::types::RootVmVerifierPvs,
     },
-    Sdk,
+    Sdk, StdIn,
 };
 use p3_baby_bear::BabyBear;
 use utils::{assert_agg_config_eq, assert_agg_pk_eq};
@@ -236,13 +236,12 @@ fn test_public_values_and_leaf_verification() {
 #[test]
 fn test_e2e_proof_generation() {
     let app_config = small_test_app_config(3);
-    #[allow(unused_variables)]
     let (e2e_prover, dummy_internal_proof) = load_agg_pk_into_e2e_prover(app_config);
 
     let air_id_perm = e2e_prover.agg_pk().root_verifier_pk.air_id_permutation();
     let special_air_ids = air_id_perm.get_special_air_ids();
 
-    let root_proof = e2e_prover.generate_e2e_proof(vec![]);
+    let root_proof = e2e_prover.generate_e2e_proof(StdIn::default());
     let root_pvs = RootVmVerifierPvs::from_flatten(
         root_proof.per_air[special_air_ids.public_values_air_id]
             .public_values
@@ -261,7 +260,6 @@ fn test_e2e_proof_generation() {
         app_exe_commit.leaf_vm_verifier_commit
     );
 
-    #[cfg(feature = "static-verifier")]
     static_verifier::test_static_verifier(
         &e2e_prover.agg_pk().root_verifier_pk,
         dummy_internal_proof,
@@ -273,12 +271,9 @@ fn test_e2e_proof_generation() {
 fn test_e2e_app_log_blowup_1() {
     let app_config = small_test_app_config(1);
 
-    #[allow(unused_variables)]
     let (e2e_prover, dummy_internal_proof) = load_agg_pk_into_e2e_prover(app_config);
-    #[allow(unused_variables)]
-    let root_proof = e2e_prover.generate_e2e_proof(vec![]);
+    let root_proof = e2e_prover.generate_e2e_proof(StdIn::default());
 
-    #[cfg(feature = "static-verifier")]
     static_verifier::test_static_verifier(
         &e2e_prover.agg_pk().root_verifier_pk,
         dummy_internal_proof,
@@ -309,14 +304,40 @@ fn test_agg_keygen_store_and_load() {
     assert_agg_pk_eq(&agg_pk, &file_pk);
 }
 
-#[cfg(feature = "static-verifier")]
+#[test]
+fn test_sdk_vm_config_builder() {
+    let sdk_vm_config = SdkVmConfig::builder()
+        .system(
+            SystemConfig::default()
+                .with_max_segment_len(200)
+                .with_continuations()
+                .with_public_values(16),
+        )
+        .native(Default::default())
+        .rv32i(Default::default())
+        .build();
+    let app_config = AppConfig {
+        app_fri_params: standard_fri_params_with_100_bits_conjectured_security(1),
+        app_vm_config: sdk_vm_config,
+    };
+
+    let (e2e_prover, dummy_internal_proof) = load_agg_pk_into_e2e_prover(app_config);
+    let root_proof = e2e_prover.generate_e2e_proof(StdIn::default());
+
+    static_verifier::test_static_verifier(
+        &e2e_prover.agg_pk().root_verifier_pk,
+        dummy_internal_proof,
+        &root_proof,
+    );
+}
+
 mod static_verifier {
     use ax_stark_sdk::{
         ax_stark_backend::prover::types::Proof,
         config::baby_bear_poseidon2_outer::BabyBearPoseidon2OuterConfig,
     };
     use axvm_native_compiler::prelude::Witness;
-    use axvm_native_recursion::witness::Witnessable;
+    use axvm_native_recursion::{halo2::wrapper::Halo2WrapperProvingKey, witness::Witnessable};
     use axvm_sdk::keygen::RootVerifierProvingKey;
 
     use crate::SC;
@@ -324,16 +345,29 @@ mod static_verifier {
     pub(crate) fn test_static_verifier(
         root_verifier_pk: &RootVerifierProvingKey,
         dummy_internal_proof: Proof<SC>,
-        root_proot: &Proof<BabyBearPoseidon2OuterConfig>,
+        root_proof: &Proof<BabyBearPoseidon2OuterConfig>,
     ) {
         // Here we intend to use a dummy root proof to generate a static verifier circuit in order
         // to test if the static verifier circuit can handle a different root proof.
         let dummy_root_proof = root_verifier_pk.generate_dummy_root_proof(dummy_internal_proof);
-        let static_verifier = root_verifier_pk.keygen_static_verifier(23, dummy_root_proof);
+        let static_verifier = root_verifier_pk.keygen_static_verifier(24, dummy_root_proof);
         let mut witness = Witness::default();
-        root_proot.write(&mut witness);
+        root_proof.write(&mut witness);
         // Here the proof is verified inside.
         // FIXME: explicitly verify the proof.
-        static_verifier.prove(witness);
+        let static_verifier_proof = static_verifier.prove(witness);
+        let verifier_wrapper =
+            Halo2WrapperProvingKey::keygen_auto_tune(static_verifier.generate_dummy_snark());
+        assert_eq!(
+            verifier_wrapper
+                .pinning
+                .metadata
+                .config_params
+                .num_advice_per_phase,
+            vec![1]
+        );
+        let evm_verifier = verifier_wrapper.generate_evm_verifier();
+        let evm_proof = verifier_wrapper.prove_for_evm(static_verifier_proof);
+        Halo2WrapperProvingKey::evm_verify(evm_verifier, evm_proof);
     }
 }

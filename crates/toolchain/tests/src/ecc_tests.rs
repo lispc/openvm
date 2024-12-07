@@ -9,9 +9,10 @@ use axvm_algebra_transpiler::{Fp2TranspilerExtension, ModularTranspilerExtension
 use axvm_circuit::{
     arch::{
         instructions::exe::AxVmExe, SystemConfig, SystemExecutor, SystemPeriphery, VmChipComplex,
-        VmConfig, VmExecutor, VmInventoryError,
+        VmConfig, VmInventoryError,
     },
     derive::{AnyEnum, InstructionExecutor, VmConfig},
+    utils::new_air_test_with_min_segments,
 };
 use axvm_ecc_circuit::{
     CurveConfig, Rv32WeierstrassConfig, WeierstrassExtension, WeierstrassExtensionExecutor,
@@ -53,9 +54,7 @@ fn test_moduli_setup_runtime() -> Result<()> {
     let moduli = ["4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129015664037894272559787", "1000000000000000003", "2305843009213693951"]
         .map(|s| num_bigint_dig::BigUint::from_str(s).unwrap());
     let config = Rv32ModularConfig::new(moduli.to_vec());
-    let executor = VmExecutor::<F, _>::new(config);
-    executor.execute(axvm_exe, vec![])?;
-    assert!(!executor.config.modular.supported_modulus.is_empty());
+    new_air_test_with_min_segments(config, axvm_exe, vec![], 1, false);
     Ok(())
 }
 
@@ -71,8 +70,7 @@ fn test_modular_runtime() -> Result<()> {
             .with_extension(ModularTranspilerExtension),
     );
     let config = Rv32ModularConfig::new(vec![SECP256K1_CONFIG.modulus.clone()]);
-    let executor = VmExecutor::<F, _>::new(config);
-    executor.execute(axvm_exe, vec![])?;
+    new_air_test_with_min_segments(config, axvm_exe, vec![], 1, false);
     Ok(())
 }
 
@@ -89,8 +87,28 @@ fn test_complex_runtime() -> Result<()> {
             .with_extension(ModularTranspilerExtension),
     );
     let config = Rv32ModularWithFp2Config::new(vec![SECP256K1_CONFIG.modulus.clone()]);
-    let executor = VmExecutor::<F, _>::new(config);
-    executor.execute(axvm_exe, vec![])?;
+    // Always run prove, as this caught a bug before.
+    new_air_test_with_min_segments(config, axvm_exe, vec![], 1, true);
+    Ok(())
+}
+
+#[test]
+fn test_complex_two_moduli_runtime() -> Result<()> {
+    let elf = build_example_program("complex-two-modulos")?;
+    let axvm_exe = AxVmExe::from_elf(
+        elf,
+        Transpiler::<F>::default()
+            .with_extension(Rv32ITranspilerExtension)
+            .with_extension(Rv32MTranspilerExtension)
+            .with_extension(Rv32IoTranspilerExtension)
+            .with_extension(Fp2TranspilerExtension)
+            .with_extension(ModularTranspilerExtension),
+    );
+    let config = Rv32ModularWithFp2Config::new(vec![
+        BigUint::from_str("998244353").unwrap(),
+        BigUint::from_str("1000000007").unwrap(),
+    ]);
+    new_air_test_with_min_segments(config, axvm_exe, vec![], 1, false);
     Ok(())
 }
 
@@ -107,8 +125,7 @@ fn test_ec_runtime() -> Result<()> {
             .with_extension(ModularTranspilerExtension),
     );
     let config = Rv32WeierstrassConfig::new(vec![SECP256K1_CONFIG.clone()]);
-    let executor = VmExecutor::<F, _>::new(config);
-    executor.execute(axvm_exe, vec![])?;
+    new_air_test_with_min_segments(config, axvm_exe, vec![], 1, false);
     Ok(())
 }
 
@@ -152,9 +169,8 @@ impl Rv32ModularKeccak256Config {
 fn test_ecdsa_runtime() -> Result<()> {
     let elf = build_example_program_with_features("ecdsa", ["k256"])?;
     let config = Rv32ModularKeccak256Config::new(vec![SECP256K1_CONFIG.clone()]);
-    let executor = VmExecutor::<F, _>::new(config);
 
-    let exe = AxVmExe::from_elf(
+    let axvm_exe = AxVmExe::from_elf(
         elf,
         Transpiler::<F>::default()
             .with_extension(Rv32ITranspilerExtension)
@@ -164,6 +180,6 @@ fn test_ecdsa_runtime() -> Result<()> {
             .with_extension(EccTranspilerExtension)
             .with_extension(ModularTranspilerExtension),
     );
-    executor.execute(exe, vec![])?;
+    new_air_test_with_min_segments(config, axvm_exe, vec![], 1, false);
     Ok(())
 }

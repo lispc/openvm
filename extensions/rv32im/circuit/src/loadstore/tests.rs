@@ -18,7 +18,7 @@ use axvm_circuit::{
     },
     utils::{u32_into_limbs, u32_sign_extend},
 };
-use axvm_instructions::{instruction::Instruction, UsizeOpcode};
+use axvm_instructions::{instruction::Instruction, AxVmOpcode, UsizeOpcode};
 use axvm_rv32im_transpiler::Rv32LoadStoreOpcode::{self, *};
 use rand::{rngs::StdRng, seq::SliceRandom, Rng};
 
@@ -90,7 +90,7 @@ fn set_and_execute(
     tester.execute(
         chip,
         Instruction::from_usize(
-            opcode as usize + Rv32LoadStoreOpcode::default_offset(),
+            AxVmOpcode::with_default_offset(opcode),
             [a, b, imm as usize, 1, mem_as],
         ),
     );
@@ -262,7 +262,7 @@ fn negative_write_data_tests() {
         Some(true),
         Some([13, 11, 156, 23]),
         Some(43641),
-        VerificationError::NonZeroCumulativeSum,
+        VerificationError::ChallengePhaseError,
     );
 
     run_negative_loadstore_test(

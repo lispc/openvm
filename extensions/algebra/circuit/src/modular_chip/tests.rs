@@ -15,8 +15,8 @@ use axvm_algebra_transpiler::Rv32ModularArithmeticOpcode;
 use axvm_circuit::arch::{
     instructions::UsizeOpcode, testing::VmChipTestBuilder, VmChipWrapper, BITWISE_OP_LOOKUP_BUS,
 };
-use axvm_ecc_constants::BLS12381;
-use axvm_instructions::{instruction::Instruction, riscv::RV32_CELL_BITS};
+use axvm_instructions::{instruction::Instruction, riscv::RV32_CELL_BITS, AxVmOpcode};
+use axvm_pairing_guest::bls12_381::BLS12_381_MODULUS;
 use axvm_rv32_adapters::{
     rv32_write_heap_default, write_ptr_reg, Rv32IsEqualModAdapterChip, Rv32VecHeapAdapterChip,
 };
@@ -133,7 +133,7 @@ fn test_addsub(opcode_offset: usize, modulus: BigUint) {
         let data_as = 2;
         let address1 = 0u32;
         let address2 = 128u32;
-        let address3 = 256u32;
+        let address3 = (1 << 28) + 1234; // a large memory address to test heap adapter
 
         write_ptr_reg(&mut tester, ptr_as, addr_ptr1, address1);
         write_ptr_reg(&mut tester, ptr_as, addr_ptr2, address2);
@@ -147,7 +147,7 @@ fn test_addsub(opcode_offset: usize, modulus: BigUint) {
         tester.write(data_as, address2 as usize, b_limbs);
 
         let instruction = Instruction::from_isize(
-            chip.core.air.offset + op,
+            AxVmOpcode::from_usize(chip.core.air.offset + op),
             addr_ptr3 as isize,
             addr_ptr1 as isize,
             addr_ptr2 as isize,
@@ -276,7 +276,7 @@ fn test_muldiv(opcode_offset: usize, modulus: BigUint) {
         tester.write(data_as, address2 as usize, b_limbs);
 
         let instruction = Instruction::from_isize(
-            chip.core.air.offset + op,
+            AxVmOpcode::from_usize(chip.core.air.offset + op),
             addr_ptr3 as isize,
             addr_ptr1 as isize,
             addr_ptr2 as isize,
@@ -376,5 +376,5 @@ fn test_modular_is_equal_1x32() {
 
 #[test]
 fn test_modular_is_equal_3x16() {
-    test_is_equal::<3, 16, 48>(17, BLS12381.MODULUS.clone(), 100);
+    test_is_equal::<3, 16, 48>(17, BLS12_381_MODULUS.clone(), 100);
 }

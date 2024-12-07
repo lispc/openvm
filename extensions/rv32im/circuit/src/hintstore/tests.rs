@@ -21,7 +21,7 @@ use axvm_circuit::{
     },
     utils::{u32_into_limbs, u32_sign_extend},
 };
-use axvm_instructions::{instruction::Instruction, UsizeOpcode};
+use axvm_instructions::{instruction::Instruction, AxVmOpcode, UsizeOpcode};
 use axvm_rv32im_transpiler::Rv32HintStoreOpcode::{self, *};
 use parking_lot::Mutex;
 use rand::{rngs::StdRng, Rng};
@@ -80,7 +80,7 @@ fn set_and_execute(
     tester.execute(
         chip,
         Instruction::from_usize(
-            opcode as usize + Rv32HintStoreOpcode::default_offset(),
+            AxVmOpcode::with_default_offset(opcode),
             [0, b, imm as usize, 1, 2],
         ),
     );
@@ -191,7 +191,7 @@ fn negative_hintstore_tests() {
     run_negative_hintstore_test(
         HINT_STOREW,
         Some([92, 187, 45, 280]),
-        VerificationError::NonZeroCumulativeSum,
+        VerificationError::ChallengePhaseError,
     );
 }
 ///////////////////////////////////////////////////////////////////////////////////////

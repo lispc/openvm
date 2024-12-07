@@ -15,7 +15,7 @@ use axvm_circuit::arch::{
     testing::{memory::gen_pointer, VmChipTestBuilder},
     VmAdapterChip,
 };
-use axvm_instructions::{instruction::Instruction, UsizeOpcode};
+use axvm_instructions::{instruction::Instruction, AxVmOpcode, UsizeOpcode};
 use axvm_rv32im_transpiler::Rv32LoadStoreOpcode::{self, *};
 use rand::{rngs::StdRng, Rng};
 
@@ -92,7 +92,7 @@ fn set_and_execute(
     tester.execute(
         chip,
         Instruction::from_usize(
-            opcode as usize + Rv32LoadStoreOpcode::default_offset(),
+            AxVmOpcode::with_default_offset(opcode),
             [a, b, imm as usize, 1, 2],
         ),
     );
@@ -231,7 +231,7 @@ fn loadstore_negative_tests() {
         None,
         None,
         None,
-        VerificationError::NonZeroCumulativeSum,
+        VerificationError::ChallengePhaseError,
     );
 
     run_negative_loadstore_test(
@@ -242,7 +242,7 @@ fn loadstore_negative_tests() {
         None,
         Some([202, 109, 183, 26]),
         Some(31212),
-        VerificationError::NonZeroCumulativeSum,
+        VerificationError::ChallengePhaseError,
     );
 
     run_negative_loadstore_test(
@@ -253,7 +253,7 @@ fn loadstore_negative_tests() {
         Some([true, false, false]),
         Some([250, 132, 77, 5]),
         Some(47741),
-        VerificationError::NonZeroCumulativeSum,
+        VerificationError::ChallengePhaseError,
     );
 }
 

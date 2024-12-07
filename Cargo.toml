@@ -46,8 +46,6 @@ members = [
     "extensions/ecc/circuit",
     "extensions/ecc/transpiler",
     "extensions/ecc/guest",
-    "extensions/ecc/constants",
-    "extensions/ecc/execution",
     "extensions/ecc/sw-setup",
     "extensions/pairing/circuit",
     "extensions/pairing/transpiler",
@@ -116,15 +114,14 @@ axvm-algebra-circuit = { path = "extensions/algebra/circuit", default-features =
 axvm-algebra-transpiler = { path = "extensions/algebra/transpiler", default-features = false }
 axvm-algebra-guest = { path = "extensions/algebra/guest", default-features = false }
 axvm-algebra-moduli-setup = { path = "extensions/algebra/moduli-setup", default-features = false }
+axvm-algebra-complex-macros = { path = "extensions/algebra/guest/src/field/complex-macros", default-features = false }
 axvm-bigint-circuit = { path = "extensions/bigint/circuit", default-features = false }
 axvm-bigint-transpiler = { path = "extensions/bigint/transpiler", default-features = false }
 axvm-bigint-guest = { path = "extensions/bigint/guest", default-features = false }
 axvm-ecc-circuit = { path = "extensions/ecc/circuit", default-features = false }
 axvm-ecc-transpiler = { path = "extensions/ecc/transpiler", default-features = false }
 axvm-ecc-guest = { path = "extensions/ecc/guest", default-features = false }
-axvm-ecc-constants = { path = "extensions/ecc/constants", default-features = false }
 axvm-ecc-sw-setup = { path = "extensions/ecc/sw-setup", default-features = false }
-ax-ecc-execution = { path = "extensions/ecc/execution", default-features = false }
 axvm-keccak256-circuit = { path = "extensions/keccak256/circuit", default-features = false }
 axvm-keccak256-transpiler = { path = "extensions/keccak256/transpiler", default-features = false }
 axvm-keccak256-guest = { path = "extensions/keccak256/guest", default-features = false }
@@ -166,7 +163,7 @@ p3-uni-stark = { git = "https://github.com/Plonky3/Plonky3.git", rev = "9b267c4"
 p3-maybe-rayon = { git = "https://github.com/Plonky3/Plonky3.git", rev = "9b267c4" } # the "parallel" feature is NOT on by default to allow single-threaded benchmarking
 p3-bn254-fr = { git = "https://github.com/Plonky3/Plonky3.git", rev = "9b267c4" }
 
-snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier", branch = "chore/ruint-pin", default-features = false, features = [
+snark-verifier-sdk = { git = "https://github.com/axiom-crypto/snark-verifier", branch = "zkvm-v0.1", default-features = false, features = [
     "loader_halo2",
     "halo2-axiom",
     "display",
@@ -180,6 +177,7 @@ rayon = "1.10"
 parking_lot = "0.12.2"
 tracing = "0.1.40"
 bincode = { version = "1.3.3", default-features = false }
+bon = "3.2.0"
 serde = { version = "1.0.201", default-features = false, features = ["derive"] }
 serde_json = "1.0.117"
 toml = "0.8.14"

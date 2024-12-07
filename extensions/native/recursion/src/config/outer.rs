@@ -10,6 +10,7 @@ use p3_field::extension::BinomialExtensionField;
 use p3_fri::{BatchOpening, CommitPhaseProofStep, FriProof, QueryProof, TwoAdicFriPcs};
 use p3_merkle_tree::MerkleTreeMmcs;
 use p3_symmetric::{MultiField32PaddingFreeSponge, TruncatedPermutation};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     digest::DigestVal,
@@ -23,7 +24,7 @@ const WIDTH: usize = 3;
 const RATE: usize = 16;
 const DIGEST_WIDTH: usize = 1;
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct OuterConfig;
 
 impl Config for OuterConfig {
@@ -59,6 +60,7 @@ pub(crate) fn new_from_outer_vkv2(
         params,
         quotient_degree,
         symbolic_constraints,
+        rap_phase_seq_kind: _,
     } = vk;
     StarkVerificationAdvice {
         preprocessed_data: preprocessed_data.map(|data| {
