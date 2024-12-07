@@ -1,22 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_main)]
 #![cfg_attr(not(feature = "std"), no_std)]
+extern crate alloc;
 
-use axvm::io::print;
 axvm::entry!(main);
 
-// fn test() -> std::result::Result<(), ()> {
-//     Ok(())
-// }
-
 pub fn main() {
-    panic!();
-    // match test() {
-    //     Ok(_) => {
-    //         println!("ok");
-    //     }
-    //     Err(_) => {
-    //         println!("err");
-    //     }
-    // }
-    // panic!();
+    let mut v = alloc::vec::Vec::new();
+    for i in 1..10 {
+        let tmp = (0..i).collect::<alloc::vec::Vec<_>>();
+        v.extend(tmp);
+    }
+    assert_eq!(v.len(), 45);
 }

@@ -222,7 +222,7 @@ fn test_matrix_power_signed_runtime() -> Result<()> {
 fn test_tiny_mem_test_runtime() -> Result<()> {
     setup_tracing();
     // let elf = build_example_program("tiny-mem-test")?;
-    let elf = build_example_program_with_features("tiny-mem-test", ["std"])?;
+    let elf = build_example_program_with_features("tiny-mem-test", ["heap-embedded-alloc"])?;
     let exe = AxVmExe::from_elf(
         elf,
         Transpiler::<F>::default()
