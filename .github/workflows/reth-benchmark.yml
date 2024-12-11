@@ -131,7 +131,6 @@ jobs:
         if: ${{ github.event.inputs.mode == 'prove-e2e' }}
         run: |
           bash ./extensions/native/recursion/trusted_setup_s3.sh
-          ln -s params rsp/params
 
       - name: Run Reth
         run: |
@@ -140,6 +139,9 @@ jobs:
           mkdir -p ../host/elf
           cp target/riscv32im-risc0-zkvm-elf/release/rsp-client-eth ../host/elf/
           cd ../..
+
+          ln -s ../params
+
           mkdir -p rpc-cache
           RPC_1=${{ secrets.RPC_URL_1 }}
           MODE=${{ inputs.mode }}
