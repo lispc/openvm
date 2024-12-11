@@ -164,5 +164,5 @@ jobs:
         working-directory: rsp
         run: |
           current_sha=$(git rev-parse HEAD)
-          METRIC_NAME="reth"
+          METRIC_NAME="dev-reth-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}"
           s5cmd cp metrics.json ${{ env.S3_METRICS_PATH }}/${current_sha}-${METRIC_NAME}.json
