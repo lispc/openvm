@@ -89,6 +89,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+      - name: Display workflow inputs
+        run: echo "${{ toJSON(github.event.inputs) }}"
       - name: Setup CLI
         working-directory: crates/cargo-axiom
         run: |
