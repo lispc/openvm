@@ -40,7 +40,7 @@ where
     }
 
     fn add_impl(&self, rhs: &Self) -> Self {
-        return Self::IDENTITY;
+        Self::IDENTITY
         // if self.is_infinity() {
         //     return rhs.clone();
         // }
@@ -76,7 +76,7 @@ where
         // y3 *= x1_minus_x3;
         // y3 -= self.y.clone();
 
-        Self::new(x3, y3)
+        // Self::new(x3, y3)
     }
 }
 
