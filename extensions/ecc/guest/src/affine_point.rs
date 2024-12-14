@@ -40,7 +40,6 @@ where
     }
 
     fn add_impl(&self, rhs: &Self) -> Self {
-        Self::IDENTITY
         // if self.is_infinity() {
         //     return rhs.clone();
         // }
@@ -57,26 +56,26 @@ where
         //     }
         // }
 
-        // let lambda = (&rhs.y - &self.y).div_unsafe(&(&rhs.x - &self.x));
-        // let mut lambda = rhs.y.clone();
-        // lambda -= self.y.clone();
-        // let mut denom = rhs.x.clone();
-        // denom -= self.x.clone();
-        // lambda.div_assign_unsafe(&denom);
+        let lambda = (&rhs.y - &self.y).div_unsafe(&(&rhs.x - &self.x));
+        let mut lambda = rhs.y.clone();
+        lambda -= self.y.clone();
+        let mut denom = rhs.x.clone();
+        denom -= self.x.clone();
+        lambda.div_assign_unsafe(&denom);
 
-        // // x3 = lambda^2 - x1 - x2
-        // let mut x3 = lambda.clone();
+        // x3 = lambda^2 - x1 - x2
+        let mut x3 = lambda.clone();
         // x3.square_assign();
         // x3 -= self.x.clone();
         // x3 -= rhs.x.clone();
 
-        // // y3 = lambda * (x1 - x3) - y1
+        // y3 = lambda * (x1 - x3) - y1
         // let x1_minus_x3 = self.x.clone() - x3.clone();
-        // let mut y3 = lambda;
+        let mut y3 = lambda;
         // y3 *= x1_minus_x3;
         // y3 -= self.y.clone();
 
-        // Self::new(x3, y3)
+        Self::new(x3, y3)
     }
 }
 
