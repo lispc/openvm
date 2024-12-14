@@ -56,7 +56,7 @@ where
         //     }
         // }
 
-        let lambda = (&rhs.y - &self.y).div_unsafe(&(&rhs.x - &self.x));
+        // let lambda = (&rhs.y - &self.y).div_unsafe(&(&rhs.x - &self.x));
         let mut lambda = rhs.y.clone();
         lambda -= self.y.clone();
         let mut denom = rhs.x.clone();
