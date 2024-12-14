@@ -40,27 +40,28 @@ where
     }
 
     fn add_impl(&self, rhs: &Self) -> Self {
-        // if self.is_infinity() {
-        //     return rhs.clone();
-        // }
-        // if rhs.is_infinity() {
-        //     return self.clone();
-        // }
+        if self.is_infinity() {
+            return rhs.clone();
+        }
+        if rhs.is_infinity() {
+            return self.clone();
+        }
 
-        // if self.x == rhs.x {
-        //     if self.y == rhs.y.clone().neg() {
-        //         return Self::IDENTITY;
-        //     }
-        //     if self.y == rhs.y {
-        //         return self.double();
-        //     }
-        // }
+        if self.x == rhs.x {
+            if self.y == rhs.y.clone().neg() {
+                return Self::IDENTITY;
+            }
+            if self.y == rhs.y {
+                return self.double();
+            }
+        }
 
         // let lambda = (&rhs.y - &self.y).div_unsafe(&(&rhs.x - &self.x));
         let mut lambda = rhs.y.clone();
         lambda -= self.y.clone();
-        // let mut denom = rhs.x.clone();
-        // denom -= self.x.clone();
+        let mut denom = rhs.x.clone();
+        denom -= self.x.clone();
+        lambda *= denom;
         // lambda.div_assign_unsafe(&denom);
 
         // x3 = lambda^2 - x1 - x2
