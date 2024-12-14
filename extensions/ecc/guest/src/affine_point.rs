@@ -65,15 +65,15 @@ where
 
         // x3 = lambda^2 - x1 - x2
         let mut x3 = lambda.clone();
-        // x3.square_assign();
-        // x3 -= self.x.clone();
-        // x3 -= rhs.x.clone();
+        x3.square_assign();
+        x3 -= self.x.clone();
+        x3 -= rhs.x.clone();
 
         // y3 = lambda * (x1 - x3) - y1
-        // let x1_minus_x3 = self.x.clone() - x3.clone();
+        let x1_minus_x3 = self.x.clone() - x3.clone();
         let mut y3 = lambda;
-        // y3 *= x1_minus_x3;
-        // y3 -= self.y.clone();
+        y3 *= x1_minus_x3;
+        y3 -= self.y.clone();
 
         Self::new(x3, y3)
     }
